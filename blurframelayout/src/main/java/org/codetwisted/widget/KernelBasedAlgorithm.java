@@ -1,4 +1,4 @@
-package org.codetwisted.widget.blurframelayout;
+package org.codetwisted.widget;
 
 public interface KernelBasedAlgorithm {
 

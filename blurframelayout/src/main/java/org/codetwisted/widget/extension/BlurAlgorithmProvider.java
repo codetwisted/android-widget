@@ -1,4 +1,4 @@
-package org.codetwisted.widget.blurframelayout;
+package org.codetwisted.widget.extension;
 
 import android.content.Context;
 import android.graphics.Bitmap;

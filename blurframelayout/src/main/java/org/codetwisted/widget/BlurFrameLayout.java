@@ -1,4 +1,4 @@
-package org.codetwisted.widget.blurframelayout;
+package org.codetwisted.widget;
 
 import android.annotation.TargetApi;
 import android.content.Context;
@@ -7,6 +7,9 @@ import android.os.Build;
 import android.support.annotation.NonNull;
 import android.util.AttributeSet;
 import android.widget.FrameLayout;
+
+import org.codetwisted.widget.extension.BlurAlgorithmProvider;
+import org.codetwisted.widget.extension.BlurPanelExtension;
 
 public class BlurFrameLayout extends FrameLayout {
 
