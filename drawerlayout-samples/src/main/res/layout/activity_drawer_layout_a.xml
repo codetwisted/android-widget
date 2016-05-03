@@ -1,0 +1,55 @@
+<?xml version="1.0" encoding="utf-8"?>
+<org.codetwisted.widget.DrawerLayout
+	xmlns:android="http://schemas.android.com/apk/res/android"
+	xmlns:app="http://schemas.android.com/apk/res-auto"
+
+	android:id="@+id/drawer_layout"
+	android:layout_width="match_parent"
+	android:layout_height="match_parent"
+	android:gravity="top">
+
+	<Button
+		android:id="@+id/button_switch_drawer_gravity"
+		android:layout_width="wrap_content"
+		android:layout_height="wrap_content"
+		android:layout_gravity="center"
+		android:text="Switch gravity"/>
+
+	<RelativeLayout
+		android:layout_width="match_parent"
+		android:layout_height="320dp"
+		android:background="?attr/colorPrimary"
+		app:nodeType="drawerContent">
+
+		<ProgressBar
+			android:id="@+id/__progress_anchor"
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_centerInParent="true"/>
+
+		<TextView
+			android:layout_width="wrap_content"
+			android:layout_height="wrap_content"
+			android:layout_below="@id/__progress_anchor"
+			android:layout_centerHorizontal="true"
+			android:text="Drawer Content"/>
+
+	</RelativeLayout>
+
+	<View
+		android:id="@+id/group_panel_handle"
+		android:layout_width="62dp"
+		android:layout_height="15dp"
+		android:background="?attr/colorPrimary"
+		app:nodeType="drawerHandle"/>
+
+	<SeekBar
+		android:id="@+id/seeker_drawer_offset"
+		android:layout_width="match_parent"
+		android:layout_height="wrap_content"
+		android:layout_gravity="bottom"
+		android:layout_marginBottom="60dp"
+		android:layout_marginLeft="20dp"
+		android:layout_marginRight="20dp"/>
+
+</org.codetwisted.widget.DrawerLayout>

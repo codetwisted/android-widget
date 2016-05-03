@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<declare-styleable name="DrawerLayout">
+		<attr name="android:gravity"/>
+		<attr name="drawerOffset" format="dimension"/>
+	</declare-styleable>
+
+	<declare-styleable name="DrawerLayout_LayoutParams">
+		<attr name="android:layout_gravity"/>
+		<attr name="nodeType" format="enum">
+			<enum name="defaultNode" value="0"/>
+			<enum name="drawerContent" value="1"/>
+			<enum name="drawerHandle" value="2"/>
+		</attr>
+	</declare-styleable>
+
+</resources>
