@@ -1,0 +1,34 @@
+apply plugin: 'com.android.library'
+
+def suffixAndroidSupportVersion='23.3.0'
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.2"
+
+    dexOptions {
+        incremental true
+        javaMaxHeapSize "3768M"
+    }
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 23
+
+        versionCode 1
+        versionName "0.9"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile project(path: ':internal')
+
+    compile "com.android.support:appcompat-v7:${suffixAndroidSupportVersion}"
+
+    testCompile 'junit:junit:4.12'
+}

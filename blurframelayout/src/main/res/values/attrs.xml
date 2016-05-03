@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+	<declare-styleable name="BlurPanelExtension">
+		<attr name="sampleFactor" format="enum">
+			<enum name="none" value="0"/>
+			<enum name="factor4" value="4"/>
+			<enum name="factor8" value="8"/>
+			<enum name="factor16" value="16"/>
+			<enum name="factor32" value="32"/>
+		</attr>
+	</declare-styleable>
+
+	<declare-styleable name="IntrinsicBlurAlgorithmProvider">
+		<attr name="blurRadius" format="float"/>
+	</declare-styleable>
+
+</resources>

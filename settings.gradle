@@ -1,1 +1,1 @@
-include ':drawerlayout', ':drawerlayout-samples'
+include ':drawerlayout', ':drawerlayout-samples', ':blurframelayout', ':internal'
