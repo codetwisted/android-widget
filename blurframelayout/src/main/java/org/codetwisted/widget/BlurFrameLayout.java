@@ -47,9 +47,7 @@ public class BlurFrameLayout extends FrameLayout {
 		if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR1) {
 			return new IntrinsicBlurAlgorithmProvider();
 		}
-		// TODO: implement CPU-bound blur algorithm provider here, for instance:
-		// https://github.com/kikoso/android-stackblur/tree/master/StackBlur
-		throw new UnsupportedOperationException("Blur algorithm provider not found.");
+		return new StackBlurAlgorithmProvider();
 	}
 
 

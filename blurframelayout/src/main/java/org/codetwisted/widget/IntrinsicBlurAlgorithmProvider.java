@@ -46,9 +46,9 @@ public class IntrinsicBlurAlgorithmProvider implements BlurAlgorithmProvider, Ke
 
 		if (attrs != null) {
 			TypedArray a = context.obtainStyledAttributes(attrs,
-				R.styleable.IntrinsicBlurAlgorithmProvider, defStyle, defStyleRes);
+				R.styleable.KernelBasedBlurAlgorithm, defStyle, defStyleRes);
 			{
-				blurRadius = a.getFloat(R.styleable.IntrinsicBlurAlgorithmProvider_blurRadius,
+				blurRadius = a.getFloat(R.styleable.KernelBasedBlurAlgorithm_blurRadius,
 					blurRadius);
 			}
 			a.recycle();
