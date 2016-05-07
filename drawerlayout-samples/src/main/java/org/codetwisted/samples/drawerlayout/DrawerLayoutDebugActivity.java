@@ -3,10 +3,13 @@ package org.codetwisted.samples.drawerlayout;
 import android.os.Bundle;
 import android.support.v4.view.GravityCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.EditText;
 import android.widget.SeekBar;
 
 import org.codetwisted.widget.DrawerLayout;
@@ -79,6 +82,30 @@ public class DrawerLayoutDebugActivity extends AppCompatActivity {
 			@Override
 			public void onStopTrackingTouch(SeekBar seekBar) {
 				/* Nothing to do */
+			}
+		});
+
+		EditText animationTime = (EditText) findViewById(R.id.edit_animation_time);
+		animationTime.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+				/* do nothing */
+			}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				/* do nothing */
+			}
+
+			@Override
+			public void afterTextChanged(Editable s) {
+				try {
+					long time = Long.parseLong(s.toString());
+					drawerLayout.setAnimationDuration(time);
+				}
+				catch (NumberFormatException e) {
+					/* how could it be? */
+				}
 			}
 		});
 	}

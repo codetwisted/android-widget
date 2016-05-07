@@ -4,6 +4,7 @@
 	<declare-styleable name="DrawerLayout">
 		<attr name="android:gravity"/>
 		<attr name="drawerOffset" format="dimension"/>
+		<attr name="animationTime" format="integer"/>
 	</declare-styleable>
 
 	<declare-styleable name="DrawerLayout_LayoutParams">
