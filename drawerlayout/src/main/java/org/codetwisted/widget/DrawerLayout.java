@@ -152,9 +152,8 @@ public class DrawerLayout extends ViewGroup {
 	}
 
 	public void setAnimationDuration(long animationDuration) {
-		if (animationDuration > 0) {
-			this.animationDuration = animationDuration;
-		}
+		this.animationDuration = Math.max(animationDuration,
+										  getResources().getInteger(android.R.integer.config_shortAnimTime));
 	}
 
 	private final ValueAnimator animator = new ValueAnimator();
