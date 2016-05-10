@@ -145,7 +145,17 @@ public class DrawerLayout extends ViewGroup {
 	private int touchSlop;
 	private int flingVelocityMinimum;
 
-	private long animationDurationShort;
+	private long animationDuration;
+
+	public long getAnimationDuration() {
+		return animationDuration;
+	}
+
+	public void setAnimationDuration(long animationDuration) {
+		this.animationDuration = Math.max(animationDuration,
+										  getResources().getInteger(android.R.integer.config_shortAnimTime));
+	}
+
 	private final ValueAnimator animator = new ValueAnimator();
 
 	private void initWidget(Context context, AttributeSet attrs, int defStyleAttr,
@@ -161,6 +171,8 @@ public class DrawerLayout extends ViewGroup {
 				this.drawerOffset = filterDrawerOffset(
 					a.getDimension(R.styleable.DrawerLayout_drawerOffset, drawerOffset));
 				this.gravity = a.getInteger(R.styleable.DrawerLayout_android_gravity, gravity);
+				this.animationDuration = a.getInt(R.styleable.DrawerLayout_animationTime,
+												  getResources().getInteger(android.R.integer.config_shortAnimTime));
 			}
 			a.recycle();
 		}
@@ -170,8 +182,6 @@ public class DrawerLayout extends ViewGroup {
 
 		touchSlop = vc.getScaledTouchSlop();
 		flingVelocityMinimum = vc.getScaledMinimumFlingVelocity();
-		animationDurationShort = getResources() // preserve new line
-			.getInteger(android.R.integer.config_shortAnimTime);
 
 		//noinspection Convert2Lambda
 		animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
@@ -441,7 +451,7 @@ public class DrawerLayout extends ViewGroup {
 							: contentRightMin;
 				}
 				animator.setIntValues(contentRightCurrent, contentRightTarget);
-				animator.setDuration(animationDurationShort);
+				animator.setDuration(animationDuration);
 				animator.start();
 
 				moved = false;
@@ -474,7 +484,7 @@ public class DrawerLayout extends ViewGroup {
 			if (animated) {
 				animator.setIntValues(contentRightCurrent,
 					open ? contentRightMax : contentRightMin);
-				animator.setDuration(animationDurationShort);
+				animator.setDuration(animationDuration);
 				animator.start();
 			}
 			else {
@@ -637,7 +647,7 @@ public class DrawerLayout extends ViewGroup {
 							: contentBottomMin;
 				}
 				animator.setIntValues(contentBottomCurrent, contentBottomTarget);
-				animator.setDuration(animationDurationShort);
+				animator.setDuration(animationDuration);
 				animator.start();
 
 				moved = false;
@@ -670,7 +680,7 @@ public class DrawerLayout extends ViewGroup {
 			if (animated) {
 				animator.setIntValues(contentBottomCurrent,
 					open ? contentBottomMax : contentBottomMin);
-				animator.setDuration(animationDurationShort);
+				animator.setDuration(animationDuration);
 				animator.start();
 			}
 			else {
@@ -828,7 +838,7 @@ public class DrawerLayout extends ViewGroup {
 							: contentLeftMin;
 				}
 				animator.setIntValues(contentLeftCurrent, contentLeftTarget);
-				animator.setDuration(animationDurationShort);
+				animator.setDuration(animationDuration);
 				animator.start();
 
 				moved = false;
@@ -860,7 +870,7 @@ public class DrawerLayout extends ViewGroup {
 		public void setOpen(boolean open, boolean animated) {
 			if (animated) {
 				animator.setIntValues(contentLeftCurrent, open ? contentLeftMin : contentLeftMax);
-				animator.setDuration(animationDurationShort);
+				animator.setDuration(animationDuration);
 				animator.start();
 			}
 			else {
@@ -1018,7 +1028,7 @@ public class DrawerLayout extends ViewGroup {
 							: contentTopMin;
 				}
 				animator.setIntValues(contentTopCurrent, contentTopTarget);
-				animator.setDuration(animationDurationShort);
+				animator.setDuration(animationDuration);
 				animator.start();
 
 				moved = false;
@@ -1050,7 +1060,7 @@ public class DrawerLayout extends ViewGroup {
 		public void setOpen(boolean open, boolean animated) {
 			if (animated) {
 				animator.setIntValues(contentTopCurrent, open ? contentTopMin : contentTopMax);
-				animator.setDuration(animationDurationShort);
+				animator.setDuration(animationDuration);
 				animator.start();
 			}
 			else {
