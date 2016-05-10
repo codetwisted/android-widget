@@ -142,6 +142,17 @@ public class DrawerLayout extends ViewGroup {
 	}
 
 
+	private boolean seizeContent = false;
+
+	public boolean isSeizeContent() {
+		return seizeContent;
+	}
+
+	public void setSeizeContent(boolean seizeContent) {
+		this.seizeContent = seizeContent;
+	}
+
+
 	private int touchSlop;
 	private int flingVelocityMinimum;
 
@@ -170,6 +181,7 @@ public class DrawerLayout extends ViewGroup {
 			{
 				this.drawerOffset = filterDrawerOffset(
 					a.getDimension(R.styleable.DrawerLayout_drawerOffset, drawerOffset));
+				this.seizeContent = a.getBoolean(R.styleable.DrawerLayout_seizeContent, false);
 				this.gravity = a.getInteger(R.styleable.DrawerLayout_android_gravity, gravity);
 				this.animationDuration = a.getInt(R.styleable.DrawerLayout_animationTime,
 												  getResources().getInteger(android.R.integer.config_shortAnimTime));
@@ -292,6 +304,7 @@ public class DrawerLayout extends ViewGroup {
 
 
 	private final Rect handleRect = new Rect();
+	private final Rect contentRect = new Rect();
 
 	private void performHandleClick(View handle, MotionEvent ev, int pointerIndex) {
 		if (handle != null && handleRect.contains( // preserve new line
@@ -345,6 +358,8 @@ public class DrawerLayout extends ViewGroup {
 			if (content != null) {
 				content.layout(contentRightCurrent - content.getMeasuredWidth(), parentTop,
 					contentRightCurrent, parentBottom);
+
+				content.getHitRect(contentRect);
 
 				View handle = drawerChildren.get(LayoutParams.NODE_TYPE_DRAWER_HANDLE);
 
@@ -539,6 +554,8 @@ public class DrawerLayout extends ViewGroup {
 			if (content != null) {
 				content.layout(parentLeft, contentBottomCurrent - content.getMeasuredHeight(),
 					parentRight, contentBottomCurrent);
+
+				content.getHitRect(contentRect);
 
 				View handle = drawerChildren.get(LayoutParams.NODE_TYPE_DRAWER_HANDLE);
 
@@ -735,6 +752,8 @@ public class DrawerLayout extends ViewGroup {
 				content.layout(contentLeftCurrent, parentTop,
 					contentLeftCurrent + content.getMeasuredWidth(), parentBottom);
 
+				content.getHitRect(contentRect);
+
 				View handle = drawerChildren.get(LayoutParams.NODE_TYPE_DRAWER_HANDLE);
 
 				if (handle != null) {
@@ -925,6 +944,8 @@ public class DrawerLayout extends ViewGroup {
 				content.layout(parentLeft, contentTopCurrent, parentRight,
 					contentTopCurrent + content.getMeasuredHeight());
 
+				content.getHitRect(contentRect);
+
 				View handle = drawerChildren.get(LayoutParams.NODE_TYPE_DRAWER_HANDLE);
 
 				if (handle != null) {
@@ -1082,7 +1103,9 @@ public class DrawerLayout extends ViewGroup {
 					|| movementAction == MotionEvent.ACTION_POINTER_DOWN) {
 
 					for (int i = ev.getPointerCount() - 1; i >= 0; --i) {
-						if (handleRect.contains((int) ev.getX(i), (int) ev.getY(i))) {
+						int x = (int) ev.getX(i);
+						int y = (int) ev.getY(i);
+						if (handleRect.contains(x, y) || seizeContent && contentRect.contains(x, y)) {
 							drawer.handleGrip(i, pointerId = ev.getPointerId(i), ev);
 							state = STATE_PULLED;
 							return true;

@@ -12,4 +12,10 @@
 	    android:checkable="true"
 	    android:title="Animated"
 		app:showAsAction="never"/>
+	<item
+		android:id="@+id/menu_drawer_content_seize"
+	    android:icon="@mipmap/ic_launcher"
+	    android:checkable="true"
+	    android:title="Seize content"
+		app:showAsAction="never"/>
 </menu>

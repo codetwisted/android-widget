@@ -148,6 +148,11 @@ public class DrawerLayoutDebugActivity extends AppCompatActivity {
 				item.setChecked(!item.isChecked());
 				animated = item.isChecked();
 				return true;
+
+			case R.id.menu_drawer_content_seize:
+				item.setChecked(!item.isChecked());
+				drawerLayout.setSeizeContent(item.isChecked());
+				return true;
 		}
 		return super.onOptionsItemSelected(item);
 	}
