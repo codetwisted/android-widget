@@ -11,7 +11,7 @@ Hopefully it will have additions soon.
 Drawer pattern implemented as a layout that has a content and a drawer with handle and can be snapped to any side of the screen.  
 Each part of it (content, drawer and handle) can have any kind of content that fits into ViewGroup.
 
-*screenshot will be here*
+![drawerlayout demo](/images/drawerlayout-demo.gif?raw=true)
 
 ### How to:
 
@@ -28,8 +28,9 @@ Specify it as `drawerContent` `drawerHandle` or `defaultNode`.
 * `drawerHandle` registers the grip that user can swipe or press to make drawerContent come in and out.
 * `defaultNode` marks everything else i.e. all content that should be present in drawer-closed mode. Everything without `nodeType` specified is treated like `defaultNode`.
 
-See picture below for better understanding:
-*screenshots with every part of a drawer highlighted will be here*
+See pictures below for better understanding:  
+
+![drawerlayout content](/images/drawerlayout-drawerContent.png?raw=true) ![drawerlayout handle](/images/drawerlayout-drawerHandle.png?raw=true) ![drawerlayout default](/images/drawerlayout-defaultNode.png?raw=true)
 
 You can also specify additional attributes:
 * `android:gravity` - identifies the side to snap. `left` by default
@@ -73,8 +74,7 @@ drawerLayout.setDrawerOpen(true, true)
 First parameter is responsible for desired state i.e. opened or closed (in example above the drawerLayout will be opened).  
 Second one is used to determine does animation is needed (in above drawerLayout opening will be animated).
 
-## Drawer Layout
-The story goes here
+[//]: # (blurframelayout should go here)
 
 ## License
 ```
