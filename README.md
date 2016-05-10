@@ -11,7 +11,7 @@ Hopefully it will have additions soon.
 Drawer pattern implemented as a layout that has a content and a drawer with handle and can be snapped to any side of the screen.  
 Each part of it (content, drawer and handle) can have any kind of content that fits into ViewGroup.
 
-![drawerlayout demo](/images/drawerlayout-demo.gif =480x853)
+<img src="/images/drawerlayout-demo.gif" width="480" height="853"></img>
 
 ### How to:
 
@@ -30,7 +30,7 @@ Specify it as `drawerContent` `drawerHandle` or `defaultNode`.
 
 See pictures below for better understanding:  
 
-![drawerlayout content](/images/drawerlayout-drawerContent.png =320x569) ![drawerlayout handle](/images/drawerlayout-drawerHandle.png =320x569) ![drawerlayout default](/images/drawerlayout-defaultNodes.png =320x569)
+<img src="/images/drawerlayout-drawerContent.png" width="320" height="569"></img>&nbsp;&nbsp;<img src="/images/drawerlayout-drawerHandle.png" width="320" height="569"></img>&nbsp;&nbsp;<img src="/images/drawerlayout-defaultNodes.png" width="320" height="569"></img>
 
 You can also specify additional attributes:
 * `android:gravity` - identifies the side to snap. `left` by default
