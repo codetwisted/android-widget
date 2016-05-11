@@ -52,13 +52,45 @@ public class DrawerLayout extends ViewGroup {
 
 	public interface Listener {
 
+		void onDrawerStartOpening();
+
 		void onDrawerOpened();
+
+		void onDrawerStartClosing();
 
 		void onDrawerClosed();
 
 		void onDrawerSliding(int current, int from, int to);
 
 	}
+
+	public static class ListenerAdapter implements Listener {
+		@Override
+		public void onDrawerStartOpening() {
+			/* stub */
+		}
+
+		@Override
+		public void onDrawerOpened() {
+			/* stub */
+		}
+
+		@Override
+		public void onDrawerStartClosing() {
+			/* stub */
+		}
+
+		@Override
+		public void onDrawerClosed() {
+			/* stub */
+		}
+
+		@Override
+		public void onDrawerSliding(int current, int from, int to) {
+			/* stub */
+		}
+	}
+
 
 	private Listener listener;
 
@@ -92,9 +124,11 @@ public class DrawerLayout extends ViewGroup {
 	}
 
 
-	private static final int STATE_IDLE    = 0;
-	private static final int STATE_PULLED  = 1;
-	private static final int STATE_ROLLING = 2;
+	private static final int STATE_IDLE    	= 0;
+	private static final int STATE_PULLED  	= 1;
+	private static final int STATE_OPENING 	= 2;
+	private static final int STATE_CLOSING 	= 3;
+	private static final int STATE_ROLLING 	= 4;
 
 	private int state = STATE_IDLE;
 
@@ -282,11 +316,29 @@ public class DrawerLayout extends ViewGroup {
 	}
 
 
+	private void dispatchDrawerOpening() {
+		if (state != STATE_OPENING) {
+			if (listener != null) {
+				listener.onDrawerStartOpening();
+			}
+			state = STATE_OPENING;
+		}
+	}
+
 	private void dispatchDrawerOpen() {
 		if (listener != null) {
 			listener.onDrawerOpened();
 		}
 		drawerOpen = true;
+	}
+
+	private void dispatchDrawerClosing() {
+		if (state != STATE_CLOSING) {
+			if (listener != null) {
+				listener.onDrawerStartClosing();
+			}
+			state = STATE_CLOSING;
+		}
 	}
 
 	private void dispatchDrawerClosed() {
@@ -416,6 +468,14 @@ public class DrawerLayout extends ViewGroup {
 					contentRightMin);
 
 				if (contentRightCurrent != contentRightCurrentNew) {
+					if (contentRightCurrent < contentRightCurrentNew) {
+						dispatchDrawerOpening();
+					}
+					else {
+						dispatchDrawerClosing();
+					}
+					state = STATE_PULLED;
+
 					contentRightCurrent = contentRightCurrentNew;
 
 					dispatchDrawerSliding(contentRightCurrent, contentRightMin, contentRightMax);
@@ -469,6 +529,13 @@ public class DrawerLayout extends ViewGroup {
 				animator.setDuration(animationDuration);
 				animator.start();
 
+				if (contentRightTarget == contentRightMax) {
+					dispatchDrawerOpening();
+				}
+				else {
+					dispatchDrawerClosing();
+				}
+
 				moved = false;
 			}
 			else {
@@ -497,6 +564,13 @@ public class DrawerLayout extends ViewGroup {
 		@Override
 		public void setOpen(boolean open, boolean animated) {
 			if (animated) {
+				if (open) {
+					dispatchDrawerOpening();
+				}
+				else {
+					dispatchDrawerClosing();
+				}
+
 				animator.setIntValues(contentRightCurrent,
 					open ? contentRightMax : contentRightMin);
 				animator.setDuration(animationDuration);
@@ -614,6 +688,13 @@ public class DrawerLayout extends ViewGroup {
 					contentBottomMin);
 
 				if (contentBottomCurrent != contentBottomCurrentNew) {
+					if (contentBottomCurrent < contentBottomCurrentNew) {
+						dispatchDrawerOpening();
+					}
+					else {
+						dispatchDrawerClosing();
+					}
+
 					contentBottomCurrent = contentBottomCurrentNew;
 
 					dispatchDrawerSliding(contentBottomCurrent, contentBottomMin, contentBottomMax);
@@ -667,6 +748,13 @@ public class DrawerLayout extends ViewGroup {
 				animator.setDuration(animationDuration);
 				animator.start();
 
+				if (contentBottomTarget == contentBottomMax) {
+					dispatchDrawerOpening();
+				}
+				else {
+					dispatchDrawerClosing();
+				}
+
 				moved = false;
 			}
 			else {
@@ -695,6 +783,13 @@ public class DrawerLayout extends ViewGroup {
 		@Override
 		public void setOpen(boolean open, boolean animated) {
 			if (animated) {
+				if (open) {
+					dispatchDrawerOpening();
+				}
+				else {
+					dispatchDrawerClosing();
+				}
+
 				animator.setIntValues(contentBottomCurrent,
 					open ? contentBottomMax : contentBottomMin);
 				animator.setDuration(animationDuration);
@@ -807,6 +902,14 @@ public class DrawerLayout extends ViewGroup {
 					Math.min(contentLeftFixed + Math.round(diff), contentLeftMax), contentLeftMin);
 
 				if (contentLeftCurrent != contentLeftCurrentNew) {
+					if (contentLeftCurrent > contentLeftCurrentNew) {
+						dispatchDrawerOpening();
+					}
+					else {
+						dispatchDrawerClosing();
+					}
+					state = STATE_PULLED;
+
 					contentLeftCurrent = contentLeftCurrentNew;
 
 					dispatchDrawerSliding(contentLeftCurrent, contentLeftMin, contentLeftMax);
@@ -860,6 +963,17 @@ public class DrawerLayout extends ViewGroup {
 				animator.setDuration(animationDuration);
 				animator.start();
 
+				if (contentLeftTarget == contentLeftMin) {
+					if (state != STATE_OPENING) {
+						dispatchDrawerOpening();
+					}
+				}
+				else {
+					if (state != STATE_CLOSING) {
+						dispatchDrawerClosing();
+					}
+				}
+
 				moved = false;
 			}
 			else {
@@ -888,6 +1002,13 @@ public class DrawerLayout extends ViewGroup {
 		@Override
 		public void setOpen(boolean open, boolean animated) {
 			if (animated) {
+				if (open) {
+					dispatchDrawerOpening();
+				}
+				else {
+					dispatchDrawerClosing();
+				}
+
 				animator.setIntValues(contentLeftCurrent, open ? contentLeftMin : contentLeftMax);
 				animator.setDuration(animationDuration);
 				animator.start();
@@ -999,6 +1120,14 @@ public class DrawerLayout extends ViewGroup {
 					Math.min(contentTopFixed + Math.round(diff), contentTopMax), contentTopMin);
 
 				if (contentTopCurrent != contentTopCurrentNew) {
+					if (contentTopCurrent > contentTopCurrentNew) {
+						dispatchDrawerOpening();
+					}
+					else {
+						dispatchDrawerClosing();
+					}
+					state = STATE_PULLED;
+
 					contentTopCurrent = contentTopCurrentNew;
 
 					dispatchDrawerSliding(contentTopCurrent, contentTopMin, contentTopMax);
@@ -1052,6 +1181,17 @@ public class DrawerLayout extends ViewGroup {
 				animator.setDuration(animationDuration);
 				animator.start();
 
+				if (contentTopTarget == contentTopMin) {
+					if (state != STATE_OPENING) {
+						dispatchDrawerOpening();
+					}
+				}
+				else {
+					if (state != STATE_CLOSING) {
+						dispatchDrawerClosing();
+					}
+				}
+
 				moved = false;
 			}
 			else {
@@ -1080,6 +1220,13 @@ public class DrawerLayout extends ViewGroup {
 		@Override
 		public void setOpen(boolean open, boolean animated) {
 			if (animated) {
+				if (open) {
+					dispatchDrawerOpening();
+				}
+				else {
+					dispatchDrawerClosing();
+				}
+
 				animator.setIntValues(contentTopCurrent, open ? contentTopMin : contentTopMax);
 				animator.setDuration(animationDuration);
 				animator.start();
