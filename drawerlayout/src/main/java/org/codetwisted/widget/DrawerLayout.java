@@ -1244,20 +1244,18 @@ public class DrawerLayout extends ViewGroup {
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent ev) {
 		if (touchEnabled) {
-			if (state == STATE_IDLE) {
-				final int movementAction = ev.getAction();
+			final int movementAction = ev.getAction();
 
-				if (movementAction == MotionEvent.ACTION_DOWN
-					|| movementAction == MotionEvent.ACTION_POINTER_DOWN) {
+			if (movementAction == MotionEvent.ACTION_DOWN
+				|| movementAction == MotionEvent.ACTION_POINTER_DOWN) {
 
-					for (int i = ev.getPointerCount() - 1; i >= 0; --i) {
-						int x = (int) ev.getX(i);
-						int y = (int) ev.getY(i);
-						if (handleRect.contains(x, y) || seizeContent && contentRect.contains(x, y)) {
-							drawer.handleGrip(i, pointerId = ev.getPointerId(i), ev);
-							state = STATE_PULLED;
-							return true;
-						}
+				for (int i = ev.getPointerCount() - 1; i >= 0; --i) {
+					int x = (int) ev.getX(i);
+					int y = (int) ev.getY(i);
+					if (handleRect.contains(x, y) || seizeContent && contentRect.contains(x, y)) {
+						drawer.handleGrip(i, pointerId = ev.getPointerId(i), ev);
+						state = STATE_PULLED;
+						return true;
 					}
 				}
 			}
@@ -1282,7 +1280,7 @@ public class DrawerLayout extends ViewGroup {
 						return false;
 				}
 			}
-			return true;
+			return state == STATE_PULLED;
 		}
 		return super.onTouchEvent(event);
 	}
