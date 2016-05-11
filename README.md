@@ -35,7 +35,9 @@ See pictures below for better understanding:
 You can also specify additional attributes:
 * `android:gravity` - identifies the side to snap. `left` by default
 * `drawerOffset` - set positive integer for drawer to stand out a little. `0` by default
-* `animationTime` - set positive integer to specify slide animation duration, can't be less than `android.R.integer.config_shortAnimTime` and set to that by default.
+* `animationTime` - set positive integer to specify slide animation duration, can't be less than `android.R.integer.config_shortAnimTime` and set to that by default
+* `touchEnable` - defines can drawer be swiped in and out or not. `true` by default
+* `seizeContent` - indicates should drawer content process swipes together with handler for drawer opening and closing or not. `false` by default
 
 Example xml:
 ```xml

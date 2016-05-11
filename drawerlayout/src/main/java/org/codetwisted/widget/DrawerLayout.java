@@ -219,6 +219,7 @@ public class DrawerLayout extends ViewGroup {
 				this.gravity = a.getInteger(R.styleable.DrawerLayout_android_gravity, gravity);
 				this.animationDuration = a.getInt(R.styleable.DrawerLayout_animationTime,
 												  getResources().getInteger(android.R.integer.config_shortAnimTime));
+				this.touchEnabled = a.getBoolean(R.styleable.DrawerLayout_touchEnabled, true);
 			}
 			a.recycle();
 		}
