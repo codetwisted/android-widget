@@ -11,6 +11,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.SeekBar;
+import android.widget.TextView;
 
 import org.codetwisted.widget.DrawerLayout;
 
@@ -43,6 +44,29 @@ public class DrawerLayoutDebugActivity extends AppCompatActivity {
 			@Override
 			public void onClick(View v) {
 				drawerLayout.setDrawerOpen(!drawerLayout.isDrawerOpen(), true);
+			}
+		});
+
+		final TextView textContentPlaceholder = (TextView) findViewById(R.id.text_content_placeholder);
+		drawerLayout.setListener(new DrawerLayout.ListenerAdapter(){
+			@Override
+			public void onDrawerStartOpening() {
+				textContentPlaceholder.setText("Open in progress...");
+			}
+
+			@Override
+			public void onDrawerStartClosing() {
+				textContentPlaceholder.setText("Close in progress...");
+			}
+
+			@Override
+			public void onDrawerOpened() {
+				textContentPlaceholder.setText("Opened");
+			}
+
+			@Override
+			public void onDrawerClosed() {
+				textContentPlaceholder.setText("Closed");
 			}
 		});
 
@@ -147,6 +171,11 @@ public class DrawerLayoutDebugActivity extends AppCompatActivity {
 			case R.id.menu_toggle_drawer_animated:
 				item.setChecked(!item.isChecked());
 				animated = item.isChecked();
+				return true;
+
+			case R.id.menu_drawer_content_seize:
+				item.setChecked(!item.isChecked());
+				drawerLayout.setSeizeContent(item.isChecked());
 				return true;
 		}
 		return super.onOptionsItemSelected(item);
