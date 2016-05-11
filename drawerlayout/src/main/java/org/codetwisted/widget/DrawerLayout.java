@@ -10,6 +10,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.animation.LinearOutSlowInInterpolator;
 import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.Gravity;
@@ -231,6 +232,7 @@ public class DrawerLayout extends ViewGroup {
 		flingVelocityMinimum = vc.getScaledMinimumFlingVelocity();
 
 		//noinspection Convert2Lambda
+		animator.setInterpolator(new LinearOutSlowInInterpolator());
 		animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
 			@Override
 			public void onAnimationUpdate(ValueAnimator animation) {
@@ -526,8 +528,16 @@ public class DrawerLayout extends ViewGroup {
 							? contentRightMax
 							: contentRightMin;
 				}
+				float expansionAmount = contentRightCurrent
+					/ (float)(contentRightMax - contentRightMin);
+
+				if (velocityDirection > 0) {
+					expansionAmount = 1 - expansionAmount;
+				}
+				expansionAmount *= expansionAmount;
+
 				animator.setIntValues(contentRightCurrent, contentRightTarget);
-				animator.setDuration(animationDuration);
+				animator.setDuration(Math.round(animationDuration * expansionAmount));
 				animator.start();
 
 				if (contentRightTarget == contentRightMax) {
@@ -745,8 +755,16 @@ public class DrawerLayout extends ViewGroup {
 							? contentBottomMax
 							: contentBottomMin;
 				}
+				float expansionAmount = contentBottomCurrent
+					/ (float)(contentBottomMax - contentBottomMin);
+
+				if (velocityDirection > 0) {
+					expansionAmount = 1 - expansionAmount;
+				}
+				expansionAmount *= expansionAmount;
+
 				animator.setIntValues(contentBottomCurrent, contentBottomTarget);
-				animator.setDuration(animationDuration);
+				animator.setDuration(Math.round(animationDuration * expansionAmount));
 				animator.start();
 
 				if (contentBottomTarget == contentBottomMax) {
@@ -960,8 +978,16 @@ public class DrawerLayout extends ViewGroup {
 							? contentLeftMax
 							: contentLeftMin;
 				}
+				float expansionAmount = contentLeftCurrent
+					/ (float)(contentLeftMax - contentLeftMin);
+
+				if (velocityDirection > 0) {
+					expansionAmount = 1 - expansionAmount;
+				}
+				expansionAmount *= expansionAmount;
+
 				animator.setIntValues(contentLeftCurrent, contentLeftTarget);
-				animator.setDuration(animationDuration);
+				animator.setDuration(Math.round(animationDuration * expansionAmount));
 				animator.start();
 
 				if (contentLeftTarget == contentLeftMin) {
@@ -1178,8 +1204,16 @@ public class DrawerLayout extends ViewGroup {
 							? contentTopMax
 							: contentTopMin;
 				}
+				float expansionAmount = contentTopCurrent
+					/ (float)(contentTopMax - contentTopMin);
+
+				if (velocityDirection > 0) {
+					expansionAmount = 1 - expansionAmount;
+				}
+				expansionAmount *= expansionAmount;
+
 				animator.setIntValues(contentTopCurrent, contentTopTarget);
-				animator.setDuration(animationDuration);
+				animator.setDuration(Math.round(animationDuration * expansionAmount));
 				animator.start();
 
 				if (contentTopTarget == contentTopMin) {
