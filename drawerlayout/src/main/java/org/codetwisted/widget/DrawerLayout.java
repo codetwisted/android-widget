@@ -10,6 +10,7 @@ import android.graphics.Rect;
 import android.graphics.drawable.Drawable;
 import android.os.Build;
 import android.support.v4.view.GravityCompat;
+import android.support.v4.view.animation.LinearOutSlowInInterpolator;
 import android.util.AttributeSet;
 import android.util.SparseArray;
 import android.view.Gravity;
@@ -231,6 +232,7 @@ public class DrawerLayout extends ViewGroup {
 		flingVelocityMinimum = vc.getScaledMinimumFlingVelocity();
 
 		//noinspection Convert2Lambda
+		animator.setInterpolator(new LinearOutSlowInInterpolator());
 		animator.addUpdateListener(new ValueAnimator.AnimatorUpdateListener() {
 			@Override
 			public void onAnimationUpdate(ValueAnimator animation) {
@@ -426,7 +428,7 @@ public class DrawerLayout extends ViewGroup {
 
 					handle.getHitRect(handleRect);
 
-					int padding = touchSlop >> 1;
+					int padding = touchSlop;
 
 					handleRect.top -= padding;
 					handleRect.right += padding;
@@ -512,22 +514,28 @@ public class DrawerLayout extends ViewGroup {
 				float velocityDirection = Math.signum(velocity);
 				float velocityPower = velocity / flingVelocityMinimum;
 
-				int contentRightTarget;
+				int contentRightTarget, distance;
 
 				if (velocityPower > 1.32f) {
 					contentRightTarget = contentRightMax;
+					distance = contentRightMax - contentRightCurrent;
 				}
 				else if (velocityPower < -.96f) {
 					contentRightTarget = contentRightMin;
+					distance = contentRightCurrent - contentRightMin;
 				}
 				else {
-					contentRightTarget =
-						velocityDirection > 0 ^ contentRightCurrent > contentRightThreshold
-							? contentRightMax
-							: contentRightMin;
+					if (velocityDirection > 0 ^ contentRightCurrent > contentRightThreshold) {
+						contentRightTarget = contentRightMax;
+						distance = contentRightMax - contentRightCurrent;
+					}
+					else {
+						contentRightTarget = contentRightMin;
+						distance = contentRightCurrent - contentRightMin;
+					}
 				}
 				animator.setIntValues(contentRightCurrent, contentRightTarget);
-				animator.setDuration(animationDuration);
+				animator.setDuration(getAnimationDuration(velocity, distance));
 				animator.start();
 
 				if (contentRightTarget == contentRightMax) {
@@ -536,7 +544,6 @@ public class DrawerLayout extends ViewGroup {
 				else {
 					dispatchDrawerClosing();
 				}
-
 				moved = false;
 			}
 			else {
@@ -644,7 +651,7 @@ public class DrawerLayout extends ViewGroup {
 
 					handle.getHitRect(handleRect);
 					{
-						int padding = touchSlop >> 1;
+						int padding = touchSlop;
 
 						handleRect.left -= padding;
 						handleRect.right += padding;
@@ -731,22 +738,28 @@ public class DrawerLayout extends ViewGroup {
 				float velocityDirection = Math.signum(velocity);
 				float velocityPower = velocity / flingVelocityMinimum;
 
-				int contentBottomTarget;
+				int contentBottomTarget, distance;
 
 				if (velocityPower > 1.32f) {
 					contentBottomTarget = contentBottomMax;
+					distance = contentBottomMax - contentBottomCurrent;
 				}
 				else if (velocityPower < -.96f) {
 					contentBottomTarget = contentBottomMin;
+					distance = contentBottomCurrent - contentBottomMin;
 				}
 				else {
-					contentBottomTarget =
-						velocityDirection > 0 ^ contentBottomCurrent > contentBottomThreshold
-							? contentBottomMax
-							: contentBottomMin;
+					if (velocityDirection > 0 ^ contentBottomCurrent > contentBottomThreshold) {
+						contentBottomTarget = contentBottomMax;
+						distance = contentBottomMax - contentBottomCurrent;
+					}
+					else {
+						contentBottomTarget = contentBottomMin;
+						distance = contentBottomCurrent - contentBottomMin;
+					}
 				}
 				animator.setIntValues(contentBottomCurrent, contentBottomTarget);
-				animator.setDuration(animationDuration);
+				animator.setDuration(getAnimationDuration(velocity, distance));
 				animator.start();
 
 				if (contentBottomTarget == contentBottomMax) {
@@ -755,7 +768,6 @@ public class DrawerLayout extends ViewGroup {
 				else {
 					dispatchDrawerClosing();
 				}
-
 				moved = false;
 			}
 			else {
@@ -861,7 +873,7 @@ public class DrawerLayout extends ViewGroup {
 
 					handle.getHitRect(handleRect);
 
-					int padding = touchSlop >> 1;
+					int padding = touchSlop;
 
 					handleRect.left -= padding;
 					handleRect.top -= padding;
@@ -946,22 +958,28 @@ public class DrawerLayout extends ViewGroup {
 				float velocityDirection = Math.signum(velocity);
 				float velocityPower = velocity / flingVelocityMinimum;
 
-				int contentLeftTarget;
+				int contentLeftTarget, distance;
 
 				if (velocityPower > .96f) {
 					contentLeftTarget = contentLeftMax;
+					distance = contentLeftMax - contentLeftCurrent;
 				}
 				else if (velocityPower < -1.32f) {
 					contentLeftTarget = contentLeftMin;
+					distance = contentLeftCurrent - contentLeftMin;
 				}
 				else {
-					contentLeftTarget =
-						velocityDirection > 0 ^ contentLeftCurrent > contentLeftThreshold
-							? contentLeftMax
-							: contentLeftMin;
+					if (velocityDirection > 0 ^ contentLeftCurrent > contentLeftThreshold) {
+						contentLeftTarget = contentLeftMax;
+						distance = contentLeftMax - contentLeftCurrent;
+					}
+					else {
+						contentLeftTarget = contentLeftMin;
+						distance = contentLeftCurrent - contentLeftMin;
+					}
 				}
 				animator.setIntValues(contentLeftCurrent, contentLeftTarget);
-				animator.setDuration(animationDuration);
+				animator.setDuration(getAnimationDuration(velocity, distance));
 				animator.start();
 
 				if (contentLeftTarget == contentLeftMin) {
@@ -974,7 +992,6 @@ public class DrawerLayout extends ViewGroup {
 						dispatchDrawerClosing();
 					}
 				}
-
 				moved = false;
 			}
 			else {
@@ -1079,7 +1096,7 @@ public class DrawerLayout extends ViewGroup {
 
 					handle.getHitRect(handleRect);
 
-					int padding = touchSlop >> 1;
+					int padding = touchSlop;
 
 					handleRect.left -= padding;
 					handleRect.top -= padding;
@@ -1164,22 +1181,28 @@ public class DrawerLayout extends ViewGroup {
 				float velocityDirection = Math.signum(velocity);
 				float velocityPower = velocity / flingVelocityMinimum;
 
-				int contentTopTarget;
+				int contentTopTarget, distance;
 
 				if (velocityPower > .96f) {
 					contentTopTarget = contentTopMax;
+					distance = contentTopMax - contentTopCurrent;
 				}
 				else if (velocityPower < -1.32f) {
 					contentTopTarget = contentTopMin;
+					distance = contentTopCurrent - contentTopMin;
 				}
 				else {
-					contentTopTarget =
-						velocityDirection > 0 ^ contentTopCurrent > contentTopThreshold
-							? contentTopMax
-							: contentTopMin;
+					if (velocityDirection > 0 ^ contentTopCurrent > contentTopThreshold) {
+						contentTopTarget = contentTopMax;
+						distance = contentTopMax - contentTopCurrent;
+					}
+					else {
+						contentTopTarget = contentTopMin;
+						distance = contentTopCurrent - contentTopMin;
+					}
 				}
 				animator.setIntValues(contentTopCurrent, contentTopTarget);
-				animator.setDuration(animationDuration);
+				animator.setDuration(getAnimationDuration(velocity, distance));
 				animator.start();
 
 				if (contentTopTarget == contentTopMin) {
@@ -1192,7 +1215,6 @@ public class DrawerLayout extends ViewGroup {
 						dispatchDrawerClosing();
 					}
 				}
-
 				moved = false;
 			}
 			else {
@@ -1236,6 +1258,10 @@ public class DrawerLayout extends ViewGroup {
 				contentTopCurrent = open ? contentTopMin : contentTopMax;
 			}
 		}
+	}
+
+	private long getAnimationDuration(float velocity, int distance) {
+		return Math.min(Math.round(1000 * Math.sqrt(distance / Math.max(Math.abs(velocity), 1))), animationDuration);
 	}
 
 

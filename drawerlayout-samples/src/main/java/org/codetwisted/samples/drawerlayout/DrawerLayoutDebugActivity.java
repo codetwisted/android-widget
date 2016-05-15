@@ -132,6 +132,7 @@ public class DrawerLayoutDebugActivity extends AppCompatActivity {
 				}
 			}
 		});
+		animationTime.clearFocus();
 	}
 
 	private static int findGravityOrientation(int gravity) {
