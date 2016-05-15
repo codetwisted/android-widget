@@ -16,8 +16,8 @@ android {
         minSdkVersion 15
         targetSdkVersion 23
 
-        versionCode 3
-        versionName "1.1"
+        versionCode 4
+        versionName "1.2"
     }
     buildTypes {
         release {
@@ -35,7 +35,7 @@ ext {
     publishedGroupId = 'org.codetwisted.android-widget'
     libraryName = 'drawerlayout'
     artifact = 'drawerlayout'
-    libraryVersion = '1.1'
+    libraryVersion = '1.2'
 
     libraryDescription = 'Android widget library with Drawer pattern implemented as a layout that has a content and a drawer with handle and can be snapped to any side of the screen'
 
