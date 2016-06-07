@@ -104,9 +104,10 @@ public class DrawerLayout extends ViewGroup {
 
 	public void setGravity(int gravity) {
 		if (this.gravity != gravity) {
-			animator.cancel();
-			setDrawerOpenImpl(false, false);
-
+			if (state != STATE_IDLE) {
+				animator.cancel();
+				setDrawerOpenImpl(false, false);
+			}
 			drawer = getDrawerImpl(this.gravity = gravity);
 			requestLayout();
 		}
@@ -131,8 +132,7 @@ public class DrawerLayout extends ViewGroup {
 	private static final int STATE_IDLE    = 0;
 	private static final int STATE_PULLED  = 1;
 	private static final int STATE_OPENING = 2;
-	private static final int STATE_CLOSING = 3;
-	private static final int STATE_ROLLING = 4;
+	private static final int STATE_CLOSING = 4;
 
 	private int state = STATE_IDLE;
 
@@ -145,7 +145,7 @@ public class DrawerLayout extends ViewGroup {
 	}
 
 	public void setDrawerOpen(final boolean drawerOpen, final boolean animated) {
-		state = STATE_ROLLING;
+		state = STATE_IDLE;
 		drawerOpenTask = new Runnable() {
 
 			@Override
@@ -174,6 +174,7 @@ public class DrawerLayout extends ViewGroup {
 			else {
 				dispatchDrawerClosed();
 			}
+			state = STATE_IDLE;
 		}
 	}
 
@@ -268,6 +269,7 @@ public class DrawerLayout extends ViewGroup {
 			@Override
 			public void onAnimationEnd(Animator animation) {
 				drawer.onAnimationEnd(animation);
+				state = STATE_IDLE;
 			}
 
 			@Override
@@ -352,7 +354,8 @@ public class DrawerLayout extends ViewGroup {
 		if (listener != null) {
 			listener.onDrawerOpened();
 		}
-		state = STATE_IDLE;
+		// state = STATE_IDLE; - this shouldn't be placed here,
+		// as we prevent handle from being pulled when it is still in grip.
 	}
 
 	private void dispatchDrawerClosing() {
@@ -370,7 +373,8 @@ public class DrawerLayout extends ViewGroup {
 		if (listener != null) {
 			listener.onDrawerClosed();
 		}
-		state = STATE_IDLE;
+		// state = STATE_IDLE; - this shouldn't be placed here,
+		// as we prevent handle from being pulled when it is still in grip.
 	}
 
 	private void dispatchDrawerSliding(int current, int from, int to) {
@@ -499,8 +503,6 @@ public class DrawerLayout extends ViewGroup {
 					else {
 						dispatchDrawerClosing();
 					}
-					state = STATE_PULLED;
-
 					contentRightCurrent = contentRightCurrentNew;
 
 					dispatchDrawerSliding(contentRightCurrent, contentRightMin, contentRightMax);
@@ -563,7 +565,7 @@ public class DrawerLayout extends ViewGroup {
 				if (contentRightTarget == contentRightMax) {
 					dispatchDrawerOpening();
 				}
-				else {
+				else if (contentRightTarget == contentRightMin) {
 					dispatchDrawerClosing();
 				}
 				moved = false;
@@ -780,7 +782,7 @@ public class DrawerLayout extends ViewGroup {
 				if (contentBottomTarget == contentBottomMax) {
 					dispatchDrawerOpening();
 				}
-				else {
+				else if (contentBottomTarget == contentBottomMin) {
 					dispatchDrawerClosing();
 				}
 				moved = false;
@@ -929,8 +931,6 @@ public class DrawerLayout extends ViewGroup {
 					else {
 						dispatchDrawerClosing();
 					}
-					state = STATE_PULLED;
-
 					contentLeftCurrent = contentLeftCurrentNew;
 
 					dispatchDrawerSliding(contentLeftCurrent, contentLeftMin, contentLeftMax);
@@ -991,14 +991,10 @@ public class DrawerLayout extends ViewGroup {
 				animator.start();
 
 				if (contentLeftTarget == contentLeftMin) {
-					if (state != STATE_OPENING) {
-						dispatchDrawerOpening();
-					}
+					dispatchDrawerOpening();
 				}
-				else {
-					if (state != STATE_CLOSING) {
-						dispatchDrawerClosing();
-					}
+				else if (contentLeftTarget == contentLeftMax) {
+					dispatchDrawerClosing();
 				}
 				moved = false;
 			}
@@ -1145,8 +1141,6 @@ public class DrawerLayout extends ViewGroup {
 					else {
 						dispatchDrawerClosing();
 					}
-					state = STATE_PULLED;
-
 					contentTopCurrent = contentTopCurrentNew;
 
 					dispatchDrawerSliding(contentTopCurrent, contentTopMin, contentTopMax);
@@ -1207,14 +1201,10 @@ public class DrawerLayout extends ViewGroup {
 				animator.start();
 
 				if (contentTopTarget == contentTopMin) {
-					if (state != STATE_OPENING) {
-						dispatchDrawerOpening();
-					}
+					dispatchDrawerOpening();
 				}
-				else {
-					if (state != STATE_CLOSING) {
-						dispatchDrawerClosing();
-					}
+				else if (contentTopTarget == contentTopMax) {
+					dispatchDrawerClosing();
 				}
 				moved = false;
 			}
@@ -1296,12 +1286,11 @@ public class DrawerLayout extends ViewGroup {
 						break;
 					case MotionEvent.ACTION_POINTER_UP:
 					case MotionEvent.ACTION_UP:
-						state = STATE_ROLLING;
 						drawer.handleFree(pointerIndex, pointerId, event);
 						return false;
 				}
 			}
-			return state == STATE_PULLED;
+			return (state & (STATE_PULLED | STATE_OPENING | STATE_CLOSING)) != 0;
 		}
 		return super.onTouchEvent(event);
 	}
