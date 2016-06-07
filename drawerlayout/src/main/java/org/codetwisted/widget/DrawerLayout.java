@@ -104,6 +104,9 @@ public class DrawerLayout extends ViewGroup {
 
 	public void setGravity(int gravity) {
 		if (this.gravity != gravity) {
+			animator.cancel();
+			setDrawerOpenImpl(false, false);
+
 			drawer = getDrawerImpl(this.gravity = gravity);
 			requestLayout();
 		}
@@ -116,7 +119,7 @@ public class DrawerLayout extends ViewGroup {
 
 	private boolean touchEnabled = true;
 
-	public void setTouchEnabled(boolean canTouch) {
+	public void setTouchEnabled(boolean touchEnabled) {
 		this.touchEnabled = touchEnabled;
 	}
 
@@ -147,26 +150,31 @@ public class DrawerLayout extends ViewGroup {
 
 			@Override
 			public void run() {
-				if (drawerOpen) {
-					dispatchDrawerOpening();
-				}
-				else {
-					dispatchDrawerClosing();
-				}
-				drawer.setOpen(drawerOpen, animated);
+				setDrawerOpenImpl(drawerOpen, animated);
 
-				if (!animated) {
-					if (drawerOpen) {
-						dispatchDrawerOpen();
-					}
-					else {
-						dispatchDrawerClosed();
-					}
-				}
 				drawerOpenTask = null;
 			}
 		};
 		requestLayout();
+	}
+
+	private void setDrawerOpenImpl(boolean drawerOpen, boolean animated) {
+		if (drawerOpen) {
+			dispatchDrawerOpening();
+		}
+		else {
+			dispatchDrawerClosing();
+		}
+		drawer.setOpen(drawerOpen, animated);
+
+		if (!animated) {
+			if (drawerOpen) {
+				dispatchDrawerOpen();
+			}
+			else {
+				dispatchDrawerClosed();
+			}
+		}
 	}
 
 
@@ -178,6 +186,10 @@ public class DrawerLayout extends ViewGroup {
 
 	public void setDrawerOffset(float drawerOffset) {
 		if (this.drawerOffset != drawerOffset) {
+			if (state != STATE_IDLE) {
+				animator.cancel();
+				setDrawerOpenImpl(false, false);
+			}
 			this.drawerOffset = filterDrawerOffset(drawerOffset);
 			requestLayout();
 		}
@@ -260,7 +272,7 @@ public class DrawerLayout extends ViewGroup {
 
 			@Override
 			public void onAnimationCancel(Animator animation) {
-				/* Nothing to do */
+				state = STATE_IDLE;
 			}
 
 			@Override
