@@ -5,6 +5,7 @@ import android.support.v4.view.GravityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -18,6 +19,9 @@ import org.codetwisted.widget.DrawerLayout;
 import java.util.Arrays;
 
 public class DrawerLayoutDebugActivity extends AppCompatActivity {
+
+	private static final String TAG = "DrawerLayout";
+
 
 	private final int GRAVITY[] = {
 		GravityCompat.START,
@@ -51,22 +55,35 @@ public class DrawerLayoutDebugActivity extends AppCompatActivity {
 		drawerLayout.setListener(new DrawerLayout.ListenerAdapter(){
 			@Override
 			public void onDrawerStartOpening() {
-				textContentPlaceholder.setText("Open in progress...");
+				textContentPlaceholder.setText("Opening");
+
+				Log.v(TAG, String.format("Drawer is being opened (is open? %b)", drawerLayout.isDrawerOpen()));
 			}
 
 			@Override
 			public void onDrawerStartClosing() {
-				textContentPlaceholder.setText("Close in progress...");
+				textContentPlaceholder.setText("Closing");
+
+				Log.v(TAG, String.format("Drawer is being closed (is open? %b)", drawerLayout.isDrawerOpen()));
 			}
 
 			@Override
 			public void onDrawerOpened() {
 				textContentPlaceholder.setText("Opened");
+
+				Log.v(TAG, String.format("Drawer is open (is open? %b)", drawerLayout.isDrawerOpen()));
 			}
 
 			@Override
 			public void onDrawerClosed() {
 				textContentPlaceholder.setText("Closed");
+
+				Log.v(TAG, String.format("Drawer is closed (is open? %b)", drawerLayout.isDrawerOpen()));
+			}
+
+			@Override
+			public void onDrawerSliding(int current, int from, int to) {
+				Log.v(TAG, String.format("Drawer is sliding (is open? %b)", drawerLayout.isDrawerOpen()));
 			}
 		});
 
