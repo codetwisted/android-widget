@@ -12,6 +12,7 @@ import android.os.Build;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.animation.LinearOutSlowInInterpolator;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -1251,6 +1252,7 @@ public class DrawerLayout extends ViewGroup {
 
 
 	private int pointerId;
+	private boolean gripped;
 
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent ev) {
@@ -1259,11 +1261,11 @@ public class DrawerLayout extends ViewGroup {
 
 			if (movementAction == MotionEvent.ACTION_DOWN
 				|| movementAction == MotionEvent.ACTION_POINTER_DOWN) {
-
 				for (int i = ev.getPointerCount() - 1; i >= 0; --i) {
 					int x = (int) ev.getX(i);
 					int y = (int) ev.getY(i);
 					if (handleRect.contains(x, y) || seizeContent && contentRect.contains(x, y)) {
+						gripped = true;
 						drawer.handleGrip(i, pointerId = ev.getPointerId(i), ev);
 						state = STATE_PULLED;
 						return true;
@@ -1279,13 +1281,14 @@ public class DrawerLayout extends ViewGroup {
 		if (state != STATE_IDLE) {
 			int pointerIndex = event.findPointerIndex(pointerId);
 
-			if (pointerIndex >= 0) {
+			if (pointerIndex >= 0 && gripped) {
 				switch (event.getAction()) {
 					case MotionEvent.ACTION_MOVE:
 						drawer.handlePull(pointerIndex, pointerId, event);
 						break;
 					case MotionEvent.ACTION_POINTER_UP:
 					case MotionEvent.ACTION_UP:
+						gripped = false;
 						drawer.handleFree(pointerIndex, pointerId, event);
 						return false;
 				}
