@@ -12,7 +12,6 @@ import android.os.Build;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.animation.LinearOutSlowInInterpolator;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -105,7 +104,7 @@ public class DrawerLayout extends ViewGroup {
 
 	public void setGravity(int gravity) {
 		if (this.gravity != gravity) {
-			if (state != STATE_IDLE) {
+			if (!hasState(STATE_IDLE)) {
 				animator.cancel();
 				setDrawerOpenImpl(false, false);
 			}
@@ -130,12 +129,47 @@ public class DrawerLayout extends ViewGroup {
 	}
 
 
-	private static final int STATE_IDLE    = 0;
-	private static final int STATE_PULLED  = 1;
-	private static final int STATE_OPENING = 2;
-	private static final int STATE_CLOSING = 4;
+	private static final int STATE_FLAG_MASK     = 0xff << 24;
+	private static final int STATE_FLAG_MOVING   = 0x01 << 24;
+	private static final int STATE_FLAG_OPENING  = 0x02 << 24;
+	private static final int STATE_FLAG_CLOSING  = 0x04 << 24;
+	private static final int STATE_FLAG_ANIMATED = 0x08 << 24;
+
+	private static final int STATE_IDLE     = 0x00;
+	private static final int STATE_HELD     = 0x01;
+	private static final int STATE_RELEASED = 0x02;
+
 
 	private int state = STATE_IDLE;
+
+	private boolean hasState(int state) {
+		return (this.state & ~STATE_FLAG_MASK) == state;
+	}
+
+	private boolean hasStateFlag(int stateFlag) {
+		return (this.state & stateFlag) != 0;
+	}
+
+
+	private void setState(int state) {
+		this.state = (this.state & STATE_FLAG_MASK) | state;
+	}
+
+	private void setState(int state, int flags) {
+		this.state = state | flags;
+	}
+
+	private void addStateFlag(int stateFlag) {
+		this.state |= stateFlag;
+	}
+
+	private void removeStateFlag(int stateFlag) {
+		this.state &= ~stateFlag;
+	}
+
+	private void setStateFlag(int stateFlag) {
+		this.state = (this.state & ~STATE_FLAG_MASK) | stateFlag;
+	}
 
 
 	private boolean  drawerOpen;
@@ -146,16 +180,16 @@ public class DrawerLayout extends ViewGroup {
 	}
 
 	public void setDrawerOpen(final boolean drawerOpen, final boolean animated) {
-		state = STATE_IDLE;
-		drawerOpenTask = new Runnable() {
+		setState(STATE_IDLE, 0);
 
-			@Override
-			public void run() {
-				setDrawerOpenImpl(drawerOpen, animated);
-
-				drawerOpenTask = null;
-			}
-		};
+		animator.cancel();
+		setDrawerOpenImpl(drawerOpen, animated);
+//		drawerOpenTask = new Runnable() {
+//			@Override
+//			public void run() {
+//				setDrawerOpenImpl(drawerOpen, animated);
+//			}
+//		};
 		requestLayout();
 	}
 
@@ -175,7 +209,7 @@ public class DrawerLayout extends ViewGroup {
 			else {
 				dispatchDrawerClosed();
 			}
-			state = STATE_IDLE;
+			setState(STATE_IDLE, 0);
 		}
 	}
 
@@ -188,7 +222,7 @@ public class DrawerLayout extends ViewGroup {
 
 	public void setDrawerOffset(float drawerOffset) {
 		if (this.drawerOffset != drawerOffset) {
-			if (state != STATE_IDLE) {
+			if (!hasState(STATE_IDLE)) {
 				animator.cancel();
 				setDrawerOpenImpl(false, false);
 			}
@@ -270,12 +304,12 @@ public class DrawerLayout extends ViewGroup {
 			@Override
 			public void onAnimationEnd(Animator animation) {
 				drawer.onAnimationEnd(animation);
-				state = STATE_IDLE;
+				setState(STATE_IDLE, 0);
 			}
 
 			@Override
 			public void onAnimationCancel(Animator animation) {
-				state = STATE_IDLE;
+				setState(STATE_IDLE, 0);
 			}
 
 			@Override
@@ -343,11 +377,12 @@ public class DrawerLayout extends ViewGroup {
 	private void dispatchDrawerOpening() {
 		drawerOpen = true;
 
-		if (state != STATE_OPENING) {
+		removeStateFlag(STATE_FLAG_CLOSING);
+		if (!hasStateFlag(STATE_FLAG_OPENING)) {
 			if (listener != null) {
 				listener.onDrawerStartOpening();
 			}
-			state = STATE_OPENING;
+			addStateFlag(STATE_FLAG_OPENING);
 		}
 	}
 
@@ -360,12 +395,12 @@ public class DrawerLayout extends ViewGroup {
 	}
 
 	private void dispatchDrawerClosing() {
-		if (state != STATE_CLOSING) {
-
+		removeStateFlag(STATE_FLAG_OPENING);
+		if (!hasStateFlag(STATE_FLAG_CLOSING)) {
 			if (listener != null) {
 				listener.onDrawerStartClosing();
 			}
-			state = STATE_CLOSING;
+			addStateFlag(STATE_FLAG_CLOSING);
 		}
 	}
 
@@ -385,6 +420,8 @@ public class DrawerLayout extends ViewGroup {
 		}
 	}
 
+
+	private View handle;
 
 	private final Rect handleRect  = new Rect();
 	private final Rect contentRect = new Rect();
@@ -406,7 +443,6 @@ public class DrawerLayout extends ViewGroup {
 
 		private int contentRightThreshold;
 
-		private View handle;
 
 		@Override
 		public void measure(SparseArray<View> drawerChildren, int widthMeasureSpec,
@@ -427,7 +463,7 @@ public class DrawerLayout extends ViewGroup {
 				contentRightMax = Math.min(content.getMeasuredWidth(), contentWidthMax);
 				contentRightMiddle = (contentRightMin + contentRightMin) >> 1;
 
-				if (state == STATE_IDLE) {
+				if (hasState(STATE_IDLE)) {
 					contentRightCurrent = isDrawerOpen() ? contentRightMax : contentRightMin;
 				}
 			}
@@ -482,12 +518,8 @@ public class DrawerLayout extends ViewGroup {
 
 			velocityTracker = VelocityTracker.obtain();
 			velocityTracker.addMovement(ev);
-
-			animator.cancel();
 		}
 
-
-		private boolean moved;
 
 		@Override
 		public void handlePull(int pointerIndex, int pointerId, MotionEvent ev) {
@@ -499,6 +531,8 @@ public class DrawerLayout extends ViewGroup {
 					contentRightMin);
 
 				if (contentRightCurrent != contentRightCurrentNew) {
+					addStateFlag(STATE_FLAG_MOVING);
+
 					if (contentRightCurrent < contentRightCurrentNew) {
 						dispatchDrawerOpening();
 					}
@@ -511,14 +545,13 @@ public class DrawerLayout extends ViewGroup {
 					requestLayout();
 
 					velocityTracker.addMovement(ev);
-					moved = true;
 				}
-				else if (moved) {
+				else if (hasStateFlag(STATE_FLAG_MOVING)) {
 					if (!(contentRightMin < contentRightCurrent // preserve new line
 						&& contentRightCurrent < contentRightMax)) {
 
 						onAnimationEnd(null);
-						moved = false;
+						removeStateFlag(STATE_FLAG_MOVING);
 					}
 					velocityTracker.clear();
 				}
@@ -528,54 +561,50 @@ public class DrawerLayout extends ViewGroup {
 
 		@Override
 		public void handleFree(int pointerIndex, int pointerId, MotionEvent ev) {
-			if (moved) {
-				float velocity;
-				{
-					velocityTracker.computeCurrentVelocity(1000);
+			float velocity;
+			{
+				velocityTracker.computeCurrentVelocity(1000);
 
-					velocity = velocityTracker.getXVelocity(pointerId);
-				}
-				velocityTracker.recycle();
+				velocity = velocityTracker.getXVelocity(pointerId);
+			}
+			velocityTracker.recycle();
 
-				float velocityDirection = Math.signum(velocity);
-				float velocityPower = velocity / flingVelocityMinimum;
+			float velocityDirection = Math.signum(velocity);
+			float velocityPower = velocity / flingVelocityMinimum;
 
-				int contentRightTarget, distance;
+			int contentRightTarget, distance;
 
-				if (velocityPower > 1.32f) {
+			if (velocityPower > 1.32f) {
+				contentRightTarget = contentRightMax;
+				distance = contentRightMax - contentRightCurrent;
+			}
+			else if (velocityPower < -.96f) {
+				contentRightTarget = contentRightMin;
+				distance = contentRightCurrent - contentRightMin;
+			}
+			else {
+				if (velocityDirection > 0 ^ contentRightCurrent > contentRightThreshold) {
 					contentRightTarget = contentRightMax;
 					distance = contentRightMax - contentRightCurrent;
 				}
-				else if (velocityPower < -.96f) {
+				else {
 					contentRightTarget = contentRightMin;
 					distance = contentRightCurrent - contentRightMin;
 				}
-				else {
-					if (velocityDirection > 0 ^ contentRightCurrent > contentRightThreshold) {
-						contentRightTarget = contentRightMax;
-						distance = contentRightMax - contentRightCurrent;
-					}
-					else {
-						contentRightTarget = contentRightMin;
-						distance = contentRightCurrent - contentRightMin;
-					}
-				}
-				animator.setIntValues(contentRightCurrent, contentRightTarget);
-				animator.setDuration(getAnimationDuration(velocity, distance));
-				animator.start();
+			}
+			removeStateFlag(STATE_FLAG_MOVING);
 
-				if (contentRightTarget == contentRightMax) {
-					dispatchDrawerOpening();
-				}
-				else if (contentRightTarget == contentRightMin) {
-					dispatchDrawerClosing();
-				}
-				moved = false;
+			animator.setIntValues(contentRightCurrent, contentRightTarget);
+			animator.setDuration(getAnimationDuration(velocity, distance));
+			animator.start();
+
+			if (contentRightTarget == contentRightMax) {
+				dispatchDrawerOpening();
 			}
-			else {
-				state = STATE_IDLE;
-				performHandleClick(handle, ev, pointerIndex);
+			else if (contentRightTarget == contentRightMin) {
+				dispatchDrawerClosing();
 			}
+			addStateFlag(STATE_FLAG_ANIMATED);
 		}
 
 		@Override
@@ -592,6 +621,9 @@ public class DrawerLayout extends ViewGroup {
 			}
 			else if (contentRightCurrent == contentRightMax) {
 				dispatchDrawerOpen();
+			}
+			if (animator != null) {
+				setState(STATE_IDLE, 0);
 			}
 		}
 
@@ -618,7 +650,6 @@ public class DrawerLayout extends ViewGroup {
 
 		private int contentBottomThreshold;
 
-		private View handle;
 
 		@Override
 		public void measure(SparseArray<View> drawerChildren, int widthMeasureSpec,
@@ -640,7 +671,7 @@ public class DrawerLayout extends ViewGroup {
 				contentBottomMax = Math.min(content.getMeasuredHeight(), contentHeightMax);
 				contentBottomMiddle = (contentBottomMin + contentBottomMax) >> 1;
 
-				if (state == STATE_IDLE) {
+				if (hasState(STATE_IDLE)) {
 					contentBottomCurrent = isDrawerOpen() ? contentBottomMax : contentBottomMin;
 				}
 			}
@@ -698,12 +729,8 @@ public class DrawerLayout extends ViewGroup {
 
 			velocityTracker = VelocityTracker.obtain();
 			velocityTracker.addMovement(ev);
-
-			animator.cancel();
 		}
 
-
-		private boolean moved;
 
 		@Override
 		public void handlePull(int pointerIndex, int pointerId, MotionEvent ev) {
@@ -715,6 +742,8 @@ public class DrawerLayout extends ViewGroup {
 					contentBottomMin);
 
 				if (contentBottomCurrent != contentBottomCurrentNew) {
+					addStateFlag(STATE_FLAG_MOVING);
+
 					if (contentBottomCurrent < contentBottomCurrentNew) {
 						dispatchDrawerOpening();
 					}
@@ -728,14 +757,13 @@ public class DrawerLayout extends ViewGroup {
 					requestLayout();
 
 					velocityTracker.addMovement(ev);
-					moved = true;
 				}
-				else if (moved) {
+				else if (hasStateFlag(STATE_FLAG_MOVING)) {
 					if (!(contentBottomMin < contentBottomCurrent // preserve new line
 						&& contentBottomCurrent < contentBottomMax)) {
 
 						onAnimationEnd(null);
-						moved = false;
+						removeStateFlag(STATE_FLAG_MOVING);
 					}
 					velocityTracker.clear();
 				}
@@ -745,54 +773,50 @@ public class DrawerLayout extends ViewGroup {
 
 		@Override
 		public void handleFree(int pointerIndex, int pointerId, MotionEvent ev) {
-			if (moved) {
-				float velocity;
-				{
-					velocityTracker.computeCurrentVelocity(1000);
+			float velocity;
+			{
+				velocityTracker.computeCurrentVelocity(1000);
 
-					velocity = velocityTracker.getYVelocity(pointerId);
-				}
-				velocityTracker.recycle();
+				velocity = velocityTracker.getYVelocity(pointerId);
+			}
+			velocityTracker.recycle();
 
-				float velocityDirection = Math.signum(velocity);
-				float velocityPower = velocity / flingVelocityMinimum;
+			float velocityDirection = Math.signum(velocity);
+			float velocityPower = velocity / flingVelocityMinimum;
 
-				int contentBottomTarget, distance;
+			int contentBottomTarget, distance;
 
-				if (velocityPower > 1.32f) {
+			if (velocityPower > 1.32f) {
+				contentBottomTarget = contentBottomMax;
+				distance = contentBottomMax - contentBottomCurrent;
+			}
+			else if (velocityPower < -.96f) {
+				contentBottomTarget = contentBottomMin;
+				distance = contentBottomCurrent - contentBottomMin;
+			}
+			else {
+				if (velocityDirection > 0 ^ contentBottomCurrent > contentBottomThreshold) {
 					contentBottomTarget = contentBottomMax;
 					distance = contentBottomMax - contentBottomCurrent;
 				}
-				else if (velocityPower < -.96f) {
+				else {
 					contentBottomTarget = contentBottomMin;
 					distance = contentBottomCurrent - contentBottomMin;
 				}
-				else {
-					if (velocityDirection > 0 ^ contentBottomCurrent > contentBottomThreshold) {
-						contentBottomTarget = contentBottomMax;
-						distance = contentBottomMax - contentBottomCurrent;
-					}
-					else {
-						contentBottomTarget = contentBottomMin;
-						distance = contentBottomCurrent - contentBottomMin;
-					}
-				}
-				animator.setIntValues(contentBottomCurrent, contentBottomTarget);
-				animator.setDuration(getAnimationDuration(velocity, distance));
-				animator.start();
+			}
+			removeStateFlag(STATE_FLAG_MOVING);
 
-				if (contentBottomTarget == contentBottomMax) {
-					dispatchDrawerOpening();
-				}
-				else if (contentBottomTarget == contentBottomMin) {
-					dispatchDrawerClosing();
-				}
-				moved = false;
+			animator.setIntValues(contentBottomCurrent, contentBottomTarget);
+			animator.setDuration(getAnimationDuration(velocity, distance));
+			animator.start();
+
+			if (contentBottomTarget == contentBottomMax) {
+				dispatchDrawerOpening();
 			}
-			else {
-				state = STATE_IDLE;
-				performHandleClick(handle, ev, pointerIndex);
+			else if (contentBottomTarget == contentBottomMin) {
+				dispatchDrawerClosing();
 			}
+			addStateFlag(STATE_FLAG_ANIMATED);
 		}
 
 		@Override
@@ -809,6 +833,9 @@ public class DrawerLayout extends ViewGroup {
 			}
 			else if (contentBottomCurrent == contentBottomMax) {
 				dispatchDrawerOpen();
+			}
+			if (animator != null) {
+				setState(STATE_IDLE, 0);
 			}
 		}
 
@@ -835,7 +862,6 @@ public class DrawerLayout extends ViewGroup {
 
 		private int contentLeftThreshold;
 
-		private View handle;
 
 		@Override
 		public void measure(SparseArray<View> drawerChildren, int widthMeasureSpec,
@@ -857,7 +883,7 @@ public class DrawerLayout extends ViewGroup {
 					getMeasuredWidth() - Math.min(content.getMeasuredWidth(), contentWidthMax));
 				contentLeftMiddle = (contentLeftMin + contentLeftMax) / 2;
 
-				if (state == STATE_IDLE) {
+				if (hasState(STATE_IDLE)) {
 					contentLeftCurrent = isDrawerOpen() ? contentLeftMin : contentLeftMax;
 				}
 			}
@@ -911,12 +937,8 @@ public class DrawerLayout extends ViewGroup {
 
 			velocityTracker = VelocityTracker.obtain();
 			velocityTracker.addMovement(ev);
-
-			animator.cancel();
 		}
 
-
-		private boolean moved;
 
 		@Override
 		public void handlePull(int pointerIndex, int pointerId, MotionEvent ev) {
@@ -927,6 +949,8 @@ public class DrawerLayout extends ViewGroup {
 					Math.min(contentLeftFixed + Math.round(diff), contentLeftMax), contentLeftMin);
 
 				if (contentLeftCurrent != contentLeftCurrentNew) {
+					addStateFlag(STATE_FLAG_MOVING);
+
 					if (contentLeftCurrent > contentLeftCurrentNew) {
 						dispatchDrawerOpening();
 					}
@@ -939,14 +963,13 @@ public class DrawerLayout extends ViewGroup {
 					requestLayout();
 
 					velocityTracker.addMovement(ev);
-					moved = true;
 				}
-				else if (moved) {
+				else if (hasStateFlag(STATE_FLAG_MOVING)) {
 					if (!(contentLeftMin < contentLeftCurrent // preserve new line
 						&& contentLeftCurrent < contentLeftMax)) {
 
 						onAnimationEnd(null);
-						moved = false;
+						removeStateFlag(STATE_FLAG_MOVING);
 					}
 					velocityTracker.clear();
 				}
@@ -956,54 +979,50 @@ public class DrawerLayout extends ViewGroup {
 
 		@Override
 		public void handleFree(int pointerIndex, int pointerId, MotionEvent ev) {
-			if (moved) {
-				float velocity;
-				{
-					velocityTracker.computeCurrentVelocity(1000);
+			float velocity;
+			{
+				velocityTracker.computeCurrentVelocity(1000);
 
-					velocity = velocityTracker.getXVelocity(pointerId);
-				}
-				velocityTracker.recycle();
+				velocity = velocityTracker.getXVelocity(pointerId);
+			}
+			velocityTracker.recycle();
 
-				float velocityDirection = Math.signum(velocity);
-				float velocityPower = velocity / flingVelocityMinimum;
+			float velocityDirection = Math.signum(velocity);
+			float velocityPower = velocity / flingVelocityMinimum;
 
-				int contentLeftTarget, distance;
+			int contentLeftTarget, distance;
 
-				if (velocityPower > .96f) {
+			if (velocityPower > .96f) {
+				contentLeftTarget = contentLeftMax;
+				distance = contentLeftMax - contentLeftCurrent;
+			}
+			else if (velocityPower < -1.32f) {
+				contentLeftTarget = contentLeftMin;
+				distance = contentLeftCurrent - contentLeftMin;
+			}
+			else {
+				if (velocityDirection > 0 ^ contentLeftCurrent > contentLeftThreshold) {
 					contentLeftTarget = contentLeftMax;
 					distance = contentLeftMax - contentLeftCurrent;
 				}
-				else if (velocityPower < -1.32f) {
+				else {
 					contentLeftTarget = contentLeftMin;
 					distance = contentLeftCurrent - contentLeftMin;
 				}
-				else {
-					if (velocityDirection > 0 ^ contentLeftCurrent > contentLeftThreshold) {
-						contentLeftTarget = contentLeftMax;
-						distance = contentLeftMax - contentLeftCurrent;
-					}
-					else {
-						contentLeftTarget = contentLeftMin;
-						distance = contentLeftCurrent - contentLeftMin;
-					}
-				}
-				animator.setIntValues(contentLeftCurrent, contentLeftTarget);
-				animator.setDuration(getAnimationDuration(velocity, distance));
-				animator.start();
+			}
+			removeStateFlag(STATE_FLAG_MOVING);
 
-				if (contentLeftTarget == contentLeftMin) {
-					dispatchDrawerOpening();
-				}
-				else if (contentLeftTarget == contentLeftMax) {
-					dispatchDrawerClosing();
-				}
-				moved = false;
+			animator.setIntValues(contentLeftCurrent, contentLeftTarget);
+			animator.setDuration(getAnimationDuration(velocity, distance));
+			animator.start();
+
+			if (contentLeftTarget == contentLeftMin) {
+				dispatchDrawerOpening();
 			}
-			else {
-				state = STATE_IDLE;
-				performHandleClick(handle, ev, pointerIndex);
+			else if (contentLeftTarget == contentLeftMax) {
+				dispatchDrawerClosing();
 			}
+			addStateFlag(STATE_FLAG_ANIMATED);
 		}
 
 		@Override
@@ -1020,6 +1039,9 @@ public class DrawerLayout extends ViewGroup {
 			}
 			else if (contentLeftCurrent == contentLeftMax) {
 				dispatchDrawerClosed();
+			}
+			if (animator != null) {
+				setState(STATE_IDLE, 0);
 			}
 		}
 
@@ -1045,7 +1067,6 @@ public class DrawerLayout extends ViewGroup {
 
 		private int contentTopThreshold;
 
-		private View handle;
 
 		@Override
 		public void measure(SparseArray<View> drawerChildren, int widthMeasureSpec,
@@ -1067,7 +1088,7 @@ public class DrawerLayout extends ViewGroup {
 					getMeasuredHeight() - Math.min(content.getMeasuredHeight(), contentHeightMax));
 				contentTopMiddle = (contentTopMin + contentTopMax) / 2;
 
-				if (state == STATE_IDLE) {
+				if (hasState(STATE_IDLE)) {
 					contentTopCurrent = isDrawerOpen() ? contentTopMin : contentTopMax;
 				}
 			}
@@ -1121,12 +1142,8 @@ public class DrawerLayout extends ViewGroup {
 
 			velocityTracker = VelocityTracker.obtain();
 			velocityTracker.addMovement(ev);
-
-			animator.cancel();
 		}
 
-
-		private boolean moved;
 
 		@Override
 		public void handlePull(int pointerIndex, int pointerId, MotionEvent ev) {
@@ -1137,6 +1154,8 @@ public class DrawerLayout extends ViewGroup {
 					Math.min(contentTopFixed + Math.round(diff), contentTopMax), contentTopMin);
 
 				if (contentTopCurrent != contentTopCurrentNew) {
+					addStateFlag(STATE_FLAG_MOVING);
+
 					if (contentTopCurrent > contentTopCurrentNew) {
 						dispatchDrawerOpening();
 					}
@@ -1149,14 +1168,13 @@ public class DrawerLayout extends ViewGroup {
 					requestLayout();
 
 					velocityTracker.addMovement(ev);
-					moved = true;
 				}
-				else if (moved) {
+				else if (hasStateFlag(STATE_FLAG_MOVING)) {
 					if (!(contentTopMin < contentTopCurrent // preserve new line
 						&& contentTopCurrent < contentTopMax)) {
 
 						onAnimationEnd(null);
-						moved = false;
+						removeStateFlag(STATE_FLAG_MOVING);
 					}
 					velocityTracker.clear();
 				}
@@ -1166,54 +1184,50 @@ public class DrawerLayout extends ViewGroup {
 
 		@Override
 		public void handleFree(int pointerIndex, int pointerId, MotionEvent ev) {
-			if (moved) {
-				float velocity;
-				{
-					velocityTracker.computeCurrentVelocity(1000);
+			float velocity;
+			{
+				velocityTracker.computeCurrentVelocity(1000);
 
-					velocity = velocityTracker.getYVelocity(pointerId);
-				}
-				velocityTracker.recycle();
+				velocity = velocityTracker.getYVelocity(pointerId);
+			}
+			velocityTracker.recycle();
 
-				float velocityDirection = Math.signum(velocity);
-				float velocityPower = velocity / flingVelocityMinimum;
+			float velocityDirection = Math.signum(velocity);
+			float velocityPower = velocity / flingVelocityMinimum;
 
-				int contentTopTarget, distance;
+			int contentTopTarget, distance;
 
-				if (velocityPower > .96f) {
+			if (velocityPower > .96f) {
+				contentTopTarget = contentTopMax;
+				distance = contentTopMax - contentTopCurrent;
+			}
+			else if (velocityPower < -1.32f) {
+				contentTopTarget = contentTopMin;
+				distance = contentTopCurrent - contentTopMin;
+			}
+			else {
+				if (velocityDirection > 0 ^ contentTopCurrent > contentTopThreshold) {
 					contentTopTarget = contentTopMax;
 					distance = contentTopMax - contentTopCurrent;
 				}
-				else if (velocityPower < -1.32f) {
+				else {
 					contentTopTarget = contentTopMin;
 					distance = contentTopCurrent - contentTopMin;
 				}
-				else {
-					if (velocityDirection > 0 ^ contentTopCurrent > contentTopThreshold) {
-						contentTopTarget = contentTopMax;
-						distance = contentTopMax - contentTopCurrent;
-					}
-					else {
-						contentTopTarget = contentTopMin;
-						distance = contentTopCurrent - contentTopMin;
-					}
-				}
-				animator.setIntValues(contentTopCurrent, contentTopTarget);
-				animator.setDuration(getAnimationDuration(velocity, distance));
-				animator.start();
+			}
+			removeStateFlag(STATE_FLAG_MOVING);
 
-				if (contentTopTarget == contentTopMin) {
-					dispatchDrawerOpening();
-				}
-				else if (contentTopTarget == contentTopMax) {
-					dispatchDrawerClosing();
-				}
-				moved = false;
+			animator.setIntValues(contentTopCurrent, contentTopTarget);
+			animator.setDuration(getAnimationDuration(velocity, distance));
+			animator.start();
+
+			if (contentTopTarget == contentTopMin) {
+				dispatchDrawerOpening();
 			}
-			else {
-				state = STATE_IDLE;
-				performHandleClick(handle, ev, pointerIndex);
+			else if (contentTopTarget == contentTopMax) {
+				dispatchDrawerClosing();
 			}
+			addStateFlag(STATE_FLAG_ANIMATED);
 		}
 
 		@Override
@@ -1230,6 +1244,9 @@ public class DrawerLayout extends ViewGroup {
 			}
 			else if (contentTopCurrent == contentTopMax) {
 				dispatchDrawerClosed();
+			}
+			if (animator != null) {
+				setState(STATE_IDLE, 0);
 			}
 		}
 
@@ -1253,7 +1270,6 @@ public class DrawerLayout extends ViewGroup {
 
 
 	private int pointerId;
-	private boolean gripped;
 
 	@Override
 	public boolean onInterceptTouchEvent(MotionEvent ev) {
@@ -1266,37 +1282,50 @@ public class DrawerLayout extends ViewGroup {
 					int x = (int) ev.getX(i);
 					int y = (int) ev.getY(i);
 					if (handleRect.contains(x, y) || seizeContent && contentRect.contains(x, y)) {
-						gripped = true;
+						animator.cancel();
+
 						drawer.handleGrip(i, pointerId = ev.getPointerId(i), ev);
-						state = STATE_PULLED;
+						setState(STATE_HELD, 0);
 						return true;
 					}
 				}
 			}
+			return super.onInterceptTouchEvent(ev);
 		}
-		return super.onInterceptTouchEvent(ev);
+		return false;
 	}
 
 	@Override
 	public boolean onTouchEvent(MotionEvent event) {
-		if (state != STATE_IDLE) {
-			int pointerIndex = event.findPointerIndex(pointerId);
+		if (touchEnabled) {
+			if (hasState(STATE_HELD)) {
+				int pointerIndex = event.findPointerIndex(pointerId);
 
-			if (pointerIndex >= 0 && gripped) {
-				switch (event.getAction()) {
-					case MotionEvent.ACTION_MOVE:
-						drawer.handlePull(pointerIndex, pointerId, event);
-						break;
-					case MotionEvent.ACTION_POINTER_UP:
-					case MotionEvent.ACTION_UP:
-						gripped = false;
-						drawer.handleFree(pointerIndex, pointerId, event);
-						return false;
+				if (pointerIndex >= 0 && hasState(STATE_HELD)) {
+					switch (event.getAction()) {
+						case MotionEvent.ACTION_MOVE:
+							drawer.handlePull(pointerIndex, pointerId, event);
+							break;
+						case MotionEvent.ACTION_POINTER_UP:
+						case MotionEvent.ACTION_UP:
+							if (hasStateFlag(STATE_FLAG_MOVING)) {
+								drawer.handleFree(pointerIndex, pointerId, event);
+								setState(STATE_RELEASED);
+							}
+							else {
+								if (!hasStateFlag(STATE_FLAG_CLOSING | STATE_FLAG_OPENING)) {
+									performHandleClick(handle, event, pointerIndex);
+								}
+								setState(STATE_IDLE, 0);
+							}
+							return false;
+					}
 				}
+				return hasState(STATE_HELD);
 			}
-			return (state & (STATE_PULLED | STATE_OPENING | STATE_CLOSING)) != 0;
+			return super.onTouchEvent(event);
 		}
-		return super.onTouchEvent(event);
+		return false;
 	}
 
 
@@ -1516,11 +1545,12 @@ public class DrawerLayout extends ViewGroup {
 				}
 			}
 		}
-		if (drawerOpenTask != null) {
-			drawerOpenTask.run();
-		}
 		drawer.layout(drawerChildren, parentLeft, parentTop, parentRight, parentBottom);
 		drawerChildren.clear();
+
+		if (drawerOpenTask != null) {
+			post(drawerOpenTask);
+		}
 	}
 
 	@Override
