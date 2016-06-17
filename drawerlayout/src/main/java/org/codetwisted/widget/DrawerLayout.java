@@ -12,6 +12,7 @@ import android.os.Build;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.animation.LinearOutSlowInInterpolator;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -152,7 +153,7 @@ public class DrawerLayout extends ViewGroup {
 
 
 	private void setState(int state) {
-		this.state = (this.state & STATE_FLAG_MASK) | state;
+		setState(state, (this.state & STATE_FLAG_MASK));
 	}
 
 	private void setState(int state, int flags) {
@@ -167,33 +168,22 @@ public class DrawerLayout extends ViewGroup {
 		this.state &= ~stateFlag;
 	}
 
-	private void setStateFlag(int stateFlag) {
-		this.state = (this.state & ~STATE_FLAG_MASK) | stateFlag;
-	}
 
-
-	private boolean  drawerOpen;
-	private Runnable drawerOpenTask;
+	private boolean drawerOpen;
 
 	public boolean isDrawerOpen() {
 		return drawerOpen;
 	}
 
-	public void setDrawerOpen(final boolean drawerOpen, final boolean animated) {
-		setState(STATE_IDLE, 0);
-
-		animator.cancel();
+	public void setDrawerOpen(boolean drawerOpen, boolean animated) {
 		setDrawerOpenImpl(drawerOpen, animated);
-//		drawerOpenTask = new Runnable() {
-//			@Override
-//			public void run() {
-//				setDrawerOpenImpl(drawerOpen, animated);
-//			}
-//		};
 		requestLayout();
 	}
 
 	private void setDrawerOpenImpl(boolean drawerOpen, boolean animated) {
+		animator.cancel();
+		setState(STATE_IDLE, animated ? STATE_FLAG_ANIMATED : 0);
+
 		if (drawerOpen) {
 			dispatchDrawerOpening();
 		}
@@ -223,7 +213,6 @@ public class DrawerLayout extends ViewGroup {
 	public void setDrawerOffset(float drawerOffset) {
 		if (this.drawerOffset != drawerOffset) {
 			if (!hasState(STATE_IDLE)) {
-				animator.cancel();
 				setDrawerOpenImpl(false, false);
 			}
 			this.drawerOffset = filterDrawerOffset(drawerOffset);
@@ -292,6 +281,7 @@ public class DrawerLayout extends ViewGroup {
 			@Override
 			public void onAnimationUpdate(ValueAnimator animation) {
 				drawer.onAnimationUpdate(animation);
+				requestLayout();
 			}
 		});
 		animator.addListener(new ValueAnimator.AnimatorListener() {
@@ -463,7 +453,7 @@ public class DrawerLayout extends ViewGroup {
 				contentRightMax = Math.min(content.getMeasuredWidth(), contentWidthMax);
 				contentRightMiddle = (contentRightMin + contentRightMin) >> 1;
 
-				if (hasState(STATE_IDLE)) {
+				if (hasState(STATE_IDLE) && !hasStateFlag(STATE_FLAG_ANIMATED)) {
 					contentRightCurrent = isDrawerOpen() ? contentRightMax : contentRightMin;
 				}
 			}
@@ -611,7 +601,6 @@ public class DrawerLayout extends ViewGroup {
 		public void onAnimationUpdate(ValueAnimator animation) {
 			contentRightCurrent = (int) animation.getAnimatedValue();
 			dispatchDrawerSliding(contentRightCurrent, contentRightMin, contentRightMax);
-			requestLayout();
 		}
 
 		@Override
@@ -671,7 +660,7 @@ public class DrawerLayout extends ViewGroup {
 				contentBottomMax = Math.min(content.getMeasuredHeight(), contentHeightMax);
 				contentBottomMiddle = (contentBottomMin + contentBottomMax) >> 1;
 
-				if (hasState(STATE_IDLE)) {
+				if (hasState(STATE_IDLE) && !hasStateFlag(STATE_FLAG_ANIMATED)) {
 					contentBottomCurrent = isDrawerOpen() ? contentBottomMax : contentBottomMin;
 				}
 			}
@@ -684,6 +673,7 @@ public class DrawerLayout extends ViewGroup {
 			View content = drawerChildren.get(LayoutParams.NODE_TYPE_DRAWER_CONTENT);
 
 			if (content != null) {
+				Log.d("DrawerLayout", String.format("Current: %d", contentBottomCurrent));
 				content.layout(parentLeft, contentBottomCurrent - content.getMeasuredHeight(),
 					parentRight, contentBottomCurrent);
 
@@ -823,7 +813,6 @@ public class DrawerLayout extends ViewGroup {
 		public void onAnimationUpdate(ValueAnimator animation) {
 			contentBottomCurrent = (int) animation.getAnimatedValue();
 			dispatchDrawerSliding(contentBottomCurrent, contentBottomMin, contentBottomMax);
-			requestLayout();
 		}
 
 		@Override
@@ -883,7 +872,7 @@ public class DrawerLayout extends ViewGroup {
 					getMeasuredWidth() - Math.min(content.getMeasuredWidth(), contentWidthMax));
 				contentLeftMiddle = (contentLeftMin + contentLeftMax) / 2;
 
-				if (hasState(STATE_IDLE)) {
+				if (hasState(STATE_IDLE) && !hasStateFlag(STATE_FLAG_ANIMATED)) {
 					contentLeftCurrent = isDrawerOpen() ? contentLeftMin : contentLeftMax;
 				}
 			}
@@ -1029,7 +1018,6 @@ public class DrawerLayout extends ViewGroup {
 		public void onAnimationUpdate(ValueAnimator animation) {
 			contentLeftCurrent = (int) animation.getAnimatedValue();
 			dispatchDrawerSliding(contentLeftCurrent, contentLeftMin, contentLeftMax);
-			requestLayout();
 		}
 
 		@Override
@@ -1088,7 +1076,7 @@ public class DrawerLayout extends ViewGroup {
 					getMeasuredHeight() - Math.min(content.getMeasuredHeight(), contentHeightMax));
 				contentTopMiddle = (contentTopMin + contentTopMax) / 2;
 
-				if (hasState(STATE_IDLE)) {
+				if (hasState(STATE_IDLE) && !hasStateFlag(STATE_FLAG_ANIMATED)) {
 					contentTopCurrent = isDrawerOpen() ? contentTopMin : contentTopMax;
 				}
 			}
@@ -1234,7 +1222,6 @@ public class DrawerLayout extends ViewGroup {
 		public void onAnimationUpdate(ValueAnimator animation) {
 			contentTopCurrent = (int) animation.getAnimatedValue();
 			dispatchDrawerSliding(contentTopCurrent, contentTopMin, contentTopMax);
-			requestLayout();
 		}
 
 		@Override
@@ -1314,9 +1301,12 @@ public class DrawerLayout extends ViewGroup {
 							}
 							else {
 								if (!hasStateFlag(STATE_FLAG_CLOSING | STATE_FLAG_OPENING)) {
+									setState(STATE_IDLE, 0);
 									performHandleClick(handle, event, pointerIndex);
 								}
-								setState(STATE_IDLE, 0);
+								else {
+									setState(STATE_IDLE, 0);
+								}
 							}
 							return false;
 					}
@@ -1547,10 +1537,6 @@ public class DrawerLayout extends ViewGroup {
 		}
 		drawer.layout(drawerChildren, parentLeft, parentTop, parentRight, parentBottom);
 		drawerChildren.clear();
-
-		if (drawerOpenTask != null) {
-			post(drawerOpenTask);
-		}
 	}
 
 	@Override

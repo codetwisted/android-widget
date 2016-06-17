@@ -83,7 +83,7 @@ public class DrawerLayoutDebugActivity extends AppCompatActivity {
 
 			@Override
 			public void onDrawerSliding(int current, int from, int to) {
-				Log.v(TAG, String.format("Drawer is sliding (is open? %b)", drawerLayout.isDrawerOpen()));
+				Log.v(TAG, String.format("Drawer is sliding [%d - %d - %d] (is open? %b)", from, current, to, drawerLayout.isDrawerOpen()));
 			}
 		});
 
