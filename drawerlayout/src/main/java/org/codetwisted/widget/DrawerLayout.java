@@ -341,6 +341,8 @@ public class DrawerLayout extends ViewGroup {
 
 
 	private void dispatchDrawerOpening() {
+		drawerOpen = true;
+
 		if (state != STATE_OPENING) {
 			if (listener != null) {
 				listener.onDrawerStartOpening();
@@ -350,8 +352,6 @@ public class DrawerLayout extends ViewGroup {
 	}
 
 	private void dispatchDrawerOpen() {
-		drawerOpen = true;
-
 		if (listener != null) {
 			listener.onDrawerOpened();
 		}
