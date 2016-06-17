@@ -1285,7 +1285,6 @@ public class DrawerLayout extends ViewGroup {
 			if (pointerIndex >= 0 && gripped) {
 				switch (event.getAction()) {
 					case MotionEvent.ACTION_MOVE:
-						Log.d("tag", drawerOpen + "");
 						drawer.handlePull(pointerIndex, pointerId, event);
 						break;
 					case MotionEvent.ACTION_POINTER_UP:
