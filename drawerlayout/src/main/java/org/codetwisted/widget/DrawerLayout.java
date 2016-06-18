@@ -12,7 +12,6 @@ import android.os.Build;
 import android.support.v4.view.GravityCompat;
 import android.support.v4.view.animation.LinearOutSlowInInterpolator;
 import android.util.AttributeSet;
-import android.util.Log;
 import android.util.SparseArray;
 import android.view.Gravity;
 import android.view.MotionEvent;
@@ -106,10 +105,11 @@ public class DrawerLayout extends ViewGroup {
 	public void setGravity(int gravity) {
 		if (this.gravity != gravity) {
 			if (!hasState(STATE_IDLE)) {
-				animator.cancel();
 				setDrawerOpenImpl(false, false);
 			}
 			drawer = getDrawerImpl(this.gravity = gravity);
+			drawer.reset();
+
 			requestLayout();
 		}
 	}
@@ -182,7 +182,7 @@ public class DrawerLayout extends ViewGroup {
 
 	private void setDrawerOpenImpl(boolean drawerOpen, boolean animated) {
 		animator.cancel();
-		setState(STATE_IDLE, animated ? STATE_FLAG_ANIMATED : 0);
+		setState(STATE_IDLE, 0);
 
 		if (drawerOpen) {
 			dispatchDrawerOpening();
@@ -288,23 +288,28 @@ public class DrawerLayout extends ViewGroup {
 
 			@Override
 			public void onAnimationStart(Animator animation) {
-				/* Nothing to do */
+				addStateFlag(STATE_FLAG_ANIMATED);
 			}
 
 			@Override
 			public void onAnimationEnd(Animator animation) {
 				drawer.onAnimationEnd(animation);
-				setState(STATE_IDLE, 0);
+
+				if (hasState(STATE_RELEASED)) {
+					setState(STATE_IDLE, 0);
+				}
+				removeStateFlag(STATE_FLAG_ANIMATED
+					| STATE_FLAG_CLOSING | STATE_FLAG_OPENING);
 			}
 
 			@Override
 			public void onAnimationCancel(Animator animation) {
-				setState(STATE_IDLE, 0);
+				/* Nothing to do */
 			}
 
 			@Override
 			public void onAnimationRepeat(Animator animation) {
-				/* Nothing to do */
+				throw new RuntimeException("Do not repeat animator!");
 			}
 		});
 	}
@@ -336,6 +341,7 @@ public class DrawerLayout extends ViewGroup {
 
 		void setOpen(boolean open, boolean animated);
 
+		void reset();
 	}
 
 	private DrawerImpl drawer;
@@ -434,6 +440,8 @@ public class DrawerLayout extends ViewGroup {
 		private int contentRightThreshold;
 
 
+		private boolean measured;
+
 		@Override
 		public void measure(SparseArray<View> drawerChildren, int widthMeasureSpec,
 			int heightMeasureSpec) {
@@ -453,8 +461,9 @@ public class DrawerLayout extends ViewGroup {
 				contentRightMax = Math.min(content.getMeasuredWidth(), contentWidthMax);
 				contentRightMiddle = (contentRightMin + contentRightMin) >> 1;
 
-				if (hasState(STATE_IDLE) && !hasStateFlag(STATE_FLAG_ANIMATED)) {
+				if (!measured) {
 					contentRightCurrent = isDrawerOpen() ? contentRightMax : contentRightMin;
+					measured = true;
 				}
 			}
 		}
@@ -516,6 +525,9 @@ public class DrawerLayout extends ViewGroup {
 			float diff = ev.getX(pointerIndex) - x;
 
 			if (Math.abs(diff) > touchSlop) {
+				if (hasStateFlag(STATE_FLAG_ANIMATED)) {
+					animator.cancel();
+				}
 				int contentRightCurrentNew = Math.max(
 					Math.min(contentLeftFixed + Math.round(diff), contentRightMax),
 					contentRightMin);
@@ -594,7 +606,6 @@ public class DrawerLayout extends ViewGroup {
 			else if (contentRightTarget == contentRightMin) {
 				dispatchDrawerClosing();
 			}
-			addStateFlag(STATE_FLAG_ANIMATED);
 		}
 
 		@Override
@@ -611,9 +622,6 @@ public class DrawerLayout extends ViewGroup {
 			else if (contentRightCurrent == contentRightMax) {
 				dispatchDrawerOpen();
 			}
-			if (animator != null) {
-				setState(STATE_IDLE, 0);
-			}
 		}
 
 		@Override
@@ -628,6 +636,11 @@ public class DrawerLayout extends ViewGroup {
 				contentRightCurrent = open ? contentRightMax : contentRightMin;
 			}
 		}
+
+		@Override
+		public void reset() {
+			measured = false;
+		}
 	}
 
 	private final class TopDrawerImpl implements DrawerImpl {
@@ -639,6 +652,8 @@ public class DrawerLayout extends ViewGroup {
 
 		private int contentBottomThreshold;
 
+
+		private boolean measured;
 
 		@Override
 		public void measure(SparseArray<View> drawerChildren, int widthMeasureSpec,
@@ -659,10 +674,10 @@ public class DrawerLayout extends ViewGroup {
 				contentBottomMin = (int) drawerOffset;
 				contentBottomMax = Math.min(content.getMeasuredHeight(), contentHeightMax);
 				contentBottomMiddle = (contentBottomMin + contentBottomMax) >> 1;
-
-				if (hasState(STATE_IDLE) && !hasStateFlag(STATE_FLAG_ANIMATED)) {
-					contentBottomCurrent = isDrawerOpen() ? contentBottomMax : contentBottomMin;
-				}
+			}
+			if (!measured) {
+				contentBottomCurrent = isDrawerOpen() ? contentBottomMax : contentBottomMin;
+				measured = true;
 			}
 		}
 
@@ -673,7 +688,6 @@ public class DrawerLayout extends ViewGroup {
 			View content = drawerChildren.get(LayoutParams.NODE_TYPE_DRAWER_CONTENT);
 
 			if (content != null) {
-				Log.d("DrawerLayout", String.format("Current: %d", contentBottomCurrent));
 				content.layout(parentLeft, contentBottomCurrent - content.getMeasuredHeight(),
 					parentRight, contentBottomCurrent);
 
@@ -727,6 +741,9 @@ public class DrawerLayout extends ViewGroup {
 			float diff = ev.getY(pointerIndex) - y;
 
 			if (Math.abs(diff) > touchSlop) {
+				if (hasStateFlag(STATE_FLAG_ANIMATED)) {
+					animator.cancel();
+				}
 				int contentBottomCurrentNew = Math.max(
 					Math.min(contentBottomFixed + Math.round(diff), contentBottomMax),
 					contentBottomMin);
@@ -740,7 +757,6 @@ public class DrawerLayout extends ViewGroup {
 					else {
 						dispatchDrawerClosing();
 					}
-
 					contentBottomCurrent = contentBottomCurrentNew;
 
 					dispatchDrawerSliding(contentBottomCurrent, contentBottomMin, contentBottomMax);
@@ -806,7 +822,6 @@ public class DrawerLayout extends ViewGroup {
 			else if (contentBottomTarget == contentBottomMin) {
 				dispatchDrawerClosing();
 			}
-			addStateFlag(STATE_FLAG_ANIMATED);
 		}
 
 		@Override
@@ -823,9 +838,6 @@ public class DrawerLayout extends ViewGroup {
 			else if (contentBottomCurrent == contentBottomMax) {
 				dispatchDrawerOpen();
 			}
-			if (animator != null) {
-				setState(STATE_IDLE, 0);
-			}
 		}
 
 		@Override
@@ -840,6 +852,11 @@ public class DrawerLayout extends ViewGroup {
 				contentBottomCurrent = open ? contentBottomMax : contentBottomMin;
 			}
 		}
+
+		@Override
+		public void reset() {
+			measured = false;
+		}
 	}
 
 	private final class RightDrawerImpl implements DrawerImpl {
@@ -851,6 +868,8 @@ public class DrawerLayout extends ViewGroup {
 
 		private int contentLeftThreshold;
 
+
+		private boolean measured;
 
 		@Override
 		public void measure(SparseArray<View> drawerChildren, int widthMeasureSpec,
@@ -872,8 +891,9 @@ public class DrawerLayout extends ViewGroup {
 					getMeasuredWidth() - Math.min(content.getMeasuredWidth(), contentWidthMax));
 				contentLeftMiddle = (contentLeftMin + contentLeftMax) / 2;
 
-				if (hasState(STATE_IDLE) && !hasStateFlag(STATE_FLAG_ANIMATED)) {
+				if (!measured) {
 					contentLeftCurrent = isDrawerOpen() ? contentLeftMin : contentLeftMax;
+					measured = true;
 				}
 			}
 		}
@@ -934,6 +954,9 @@ public class DrawerLayout extends ViewGroup {
 			float diff = ev.getX(pointerIndex) - x;
 
 			if (Math.abs(diff) > touchSlop) {
+				if (hasStateFlag(STATE_FLAG_ANIMATED)) {
+					animator.cancel();
+				}
 				int contentLeftCurrentNew = Math.max(
 					Math.min(contentLeftFixed + Math.round(diff), contentLeftMax), contentLeftMin);
 
@@ -1011,7 +1034,6 @@ public class DrawerLayout extends ViewGroup {
 			else if (contentLeftTarget == contentLeftMax) {
 				dispatchDrawerClosing();
 			}
-			addStateFlag(STATE_FLAG_ANIMATED);
 		}
 
 		@Override
@@ -1028,9 +1050,6 @@ public class DrawerLayout extends ViewGroup {
 			else if (contentLeftCurrent == contentLeftMax) {
 				dispatchDrawerClosed();
 			}
-			if (animator != null) {
-				setState(STATE_IDLE, 0);
-			}
 		}
 
 		@Override
@@ -1044,6 +1063,11 @@ public class DrawerLayout extends ViewGroup {
 				contentLeftCurrent = open ? contentLeftMin : contentLeftMax;
 			}
 		}
+
+		@Override
+		public void reset() {
+			measured = false;
+		}
 	}
 
 	private final class BottomDrawerImpl implements DrawerImpl {
@@ -1055,6 +1079,8 @@ public class DrawerLayout extends ViewGroup {
 
 		private int contentTopThreshold;
 
+
+		private boolean measured;
 
 		@Override
 		public void measure(SparseArray<View> drawerChildren, int widthMeasureSpec,
@@ -1076,8 +1102,9 @@ public class DrawerLayout extends ViewGroup {
 					getMeasuredHeight() - Math.min(content.getMeasuredHeight(), contentHeightMax));
 				contentTopMiddle = (contentTopMin + contentTopMax) / 2;
 
-				if (hasState(STATE_IDLE) && !hasStateFlag(STATE_FLAG_ANIMATED)) {
+				if (!measured) {
 					contentTopCurrent = isDrawerOpen() ? contentTopMin : contentTopMax;
+					measured = true;
 				}
 			}
 		}
@@ -1138,6 +1165,9 @@ public class DrawerLayout extends ViewGroup {
 			float diff = ev.getY(pointerIndex) - y;
 
 			if (Math.abs(diff) > touchSlop) {
+				if (hasStateFlag(STATE_FLAG_ANIMATED)) {
+					animator.cancel();
+				}
 				int contentTopCurrentNew = Math.max(
 					Math.min(contentTopFixed + Math.round(diff), contentTopMax), contentTopMin);
 
@@ -1215,7 +1245,6 @@ public class DrawerLayout extends ViewGroup {
 			else if (contentTopTarget == contentTopMax) {
 				dispatchDrawerClosing();
 			}
-			addStateFlag(STATE_FLAG_ANIMATED);
 		}
 
 		@Override
@@ -1232,9 +1261,6 @@ public class DrawerLayout extends ViewGroup {
 			else if (contentTopCurrent == contentTopMax) {
 				dispatchDrawerClosed();
 			}
-			if (animator != null) {
-				setState(STATE_IDLE, 0);
-			}
 		}
 
 		@Override
@@ -1247,6 +1273,11 @@ public class DrawerLayout extends ViewGroup {
 			else {
 				contentTopCurrent = open ? contentTopMin : contentTopMax;
 			}
+		}
+
+		@Override
+		public void reset() {
+			measured = false;
 		}
 	}
 
@@ -1265,17 +1296,23 @@ public class DrawerLayout extends ViewGroup {
 
 			if (movementAction == MotionEvent.ACTION_DOWN
 				|| movementAction == MotionEvent.ACTION_POINTER_DOWN) {
+
+				boolean consumed = false;
 				for (int i = ev.getPointerCount() - 1; i >= 0; --i) {
 					int x = (int) ev.getX(i);
 					int y = (int) ev.getY(i);
-					if (handleRect.contains(x, y) || seizeContent && contentRect.contains(x, y)) {
-						animator.cancel();
 
+					boolean handleRectContains = handleRect.contains(x, y);
+					boolean contentRectContains = contentRect.contains(x, y);
+
+					consumed |= handleRectContains || contentRectContains;
+					if (handleRectContains || seizeContent && contentRectContains) {
 						drawer.handleGrip(i, pointerId = ev.getPointerId(i), ev);
-						setState(STATE_HELD, 0);
+						setState(STATE_HELD);
 						return true;
 					}
 				}
+				return consumed;
 			}
 			return super.onInterceptTouchEvent(ev);
 		}
@@ -1288,7 +1325,7 @@ public class DrawerLayout extends ViewGroup {
 			if (hasState(STATE_HELD)) {
 				int pointerIndex = event.findPointerIndex(pointerId);
 
-				if (pointerIndex >= 0 && hasState(STATE_HELD)) {
+				if (pointerIndex >= 0) {
 					switch (event.getAction()) {
 						case MotionEvent.ACTION_MOVE:
 							drawer.handlePull(pointerIndex, pointerId, event);
@@ -1305,7 +1342,7 @@ public class DrawerLayout extends ViewGroup {
 									performHandleClick(handle, event, pointerIndex);
 								}
 								else {
-									setState(STATE_IDLE, 0);
+									setState(STATE_IDLE);
 								}
 							}
 							return false;
@@ -1537,6 +1574,18 @@ public class DrawerLayout extends ViewGroup {
 		}
 		drawer.layout(drawerChildren, parentLeft, parentTop, parentRight, parentBottom);
 		drawerChildren.clear();
+	}
+
+	@Override
+	public void onViewAdded(View child) {
+		super.onViewAdded(child);
+		drawer.reset();
+	}
+
+	@Override
+	public void onViewRemoved(View child) {
+		super.onViewRemoved(child);
+		drawer.reset();
 	}
 
 	@Override
