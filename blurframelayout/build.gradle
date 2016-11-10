@@ -1,18 +1,15 @@
 apply plugin: 'com.android.library'
 
-def suffixAndroidSupportVersion='23.3.0'
-
 android {
-    compileSdkVersion 23
-    buildToolsVersion "23.0.2"
+    compileSdkVersion 25
+    buildToolsVersion "23.0.3"
 
     dexOptions {
-        incremental true
         javaMaxHeapSize "3768M"
     }
     defaultConfig {
         minSdkVersion 15
-        targetSdkVersion 23
+        targetSdkVersion 25
 
         versionCode 1
         versionName "0.9"
