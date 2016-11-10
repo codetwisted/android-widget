@@ -75,11 +75,11 @@ public class IntrinsicBlurAlgorithmProvider implements BlurAlgorithmProvider, Ke
 	}
 
 
-	private boolean disabled;
+	private boolean disabled = true;
 
 	@Override
 	public void blur(@NonNull Bitmap bitmapPanel) {
-		if (!disabled) {
+		if (!isDisabled()) {
 			Allocation output = Allocation.createTyped(renderScript, input.getType());
 
 			blur.setInput(input);

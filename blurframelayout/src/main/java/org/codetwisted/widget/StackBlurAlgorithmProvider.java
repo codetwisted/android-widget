@@ -67,15 +67,17 @@ public class StackBlurAlgorithmProvider implements BlurAlgorithmProvider, Kernel
 	}
 
 
-	private int radius;
+	private int radius = Integer.MIN_VALUE;
 
 	@Override
 	public void blur(@NonNull Bitmap bitmapPanel) {
-		drawingCacheBuffer.rewind();
-		bitmapPanel.copyPixelsFromBuffer(drawingCacheBuffer);
+		if (!isDisabled()) {
+			drawingCacheBuffer.rewind();
+			bitmapPanel.copyPixelsFromBuffer(drawingCacheBuffer);
 
-		functionToBlur(bitmapPanel, radius, 1, 0, 1);
-		functionToBlur(bitmapPanel, radius, 1, 1, 2);
+			functionToBlur(bitmapPanel, radius, 1, 0, 1);
+			functionToBlur(bitmapPanel, radius, 1, 1, 2);
+		}
 	}
 
 	@Override

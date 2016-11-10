@@ -6,6 +6,7 @@ import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Matrix;
 import android.graphics.Paint;
+import android.support.annotation.IntDef;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.util.AttributeSet;
@@ -17,10 +18,23 @@ import org.codetwisted.internal.DebugUtils;
 import org.codetwisted.extension.WidgetExtension;
 import org.codetwisted.widget.R;
 
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+
 public class BlurPanelExtension<T extends BlurAlgorithmProvider> extends WidgetExtension<View> {
 
 	private static final String TAG = BlurPanelExtension.class.getName();
 
+	@IntDef(value = {
+			SAMPLE_FACTOR_NONE,
+			SAMPLE_FACTOR_4,
+			SAMPLE_FACTOR_8,
+			SAMPLE_FACTOR_16,
+			SAMPLE_FACTOR_32
+	})
+	@Retention(RetentionPolicy.SOURCE)
+	public @interface SampleFactorMagic {
+	}
 
 	public static final int SAMPLE_FACTOR_NONE  = 0;
 	public static final int SAMPLE_FACTOR_4     = 4;
@@ -36,7 +50,7 @@ public class BlurPanelExtension<T extends BlurAlgorithmProvider> extends WidgetE
 		@SampleFactorMagic
 		int sampleFactor = SAMPLE_FACTOR_NONE;
 
-		if (attrs != null) {
+		if (attrs != null && !getInstanceExtended().isInEditMode()) {
 			TypedArray a = context.obtainStyledAttributes(attrs, R.styleable.BlurPanelExtension, defStyle, defStyleRes);
 			{
 				//noinspection WrongConstant
@@ -47,8 +61,10 @@ public class BlurPanelExtension<T extends BlurAlgorithmProvider> extends WidgetE
 		setSampleFactor(sampleFactor);
 
 		blurAlgorithmProvider.associate(this);
-		blurAlgorithmProvider.init(context, attrs, defStyle, defStyleRes);
 
+        if (!getInstanceExtended().isInEditMode()) {
+            blurAlgorithmProvider.init(context, attrs, defStyle, defStyleRes);
+        }
 		isInitialized = true;
 	}
 
